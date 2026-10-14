@@ -239,6 +239,9 @@ Padlight is young. What is on this page works today. Next on the list:
 - **Bluetooth and the Xbox Wireless Adapter**, tried on real hardware ([#3](https://github.com/NahuelGenchi/padlight/issues/3)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
+- **Settings and alerts**, with notifications for a low battery and for controllers coming and going, top-bar options, keeping the screen awake, and nicknames ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
+- **Controller tools**, such as a stick and trigger check, a button checklist, a vibration lab and Find my controller ([M5](https://github.com/NahuelGenchi/padlight/milestone/6)).
+- **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
 
 | Milestone | Outcome |
 | :--- | :--- |
@@ -246,6 +249,8 @@ Padlight is young. What is on this page works today. Next on the list:
 | [M1 — Indicator and live view](https://github.com/NahuelGenchi/padlight/milestone/2) | The top-bar icon, the card and the live picture, and their fixes |
 | [M2 — More controllers](https://github.com/NahuelGenchi/padlight/milestone/3) | Other Xbox models and their pictures, Bluetooth and the adapter on real hardware |
 | [M3 — Release](https://github.com/NahuelGenchi/padlight/milestone/4) | Packaging, the extensions.gnome.org listing and versioned releases |
+| [M4 — Settings and alerts](https://github.com/NahuelGenchi/padlight/milestone/5) | A settings window, notifications, top-bar options, keeping the screen awake and nicknames |
+| [M5 — Controller tools](https://github.com/NahuelGenchi/padlight/milestone/6) | Checks for the sticks, triggers, buttons and vibration; finding a controller, the apps using it, firmware hints and pairing |
 
 ## Contributing
 
