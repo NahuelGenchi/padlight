@@ -24,12 +24,14 @@ Never describe something as working or complete unless a recorded check establis
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, and the Python helpers with fake devices |
+| `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 
 ## Commands
 
 - `./install.sh` installs or updates the extension for the current user and switches it on; `./install.sh --pack` only builds the package; `./install.sh --uninstall` removes it. A running Wayland session loads new extension code only at the next log-in.
-- `for f in src/*.js; do node --check "$f"; done` and `python3 -m py_compile src/monitor.py src/rumble.py` are the source checks. There is no test suite yet.
+- `tests/run.sh` runs the source checks (`node --check` on the JavaScript, `python3 -m py_compile` on the helpers) and the tests in `tests/`. It needs gjs, Node.js and Python 3 but no GNOME session, and the Checks workflow runs it on every PR. A change to detection, battery matching or the helpers comes with a test.
 - In a real session, `journalctl --user -b | grep -i padlight` shows the extension's errors.
 
 ## Working well here

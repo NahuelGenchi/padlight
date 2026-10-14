@@ -48,6 +48,8 @@ PRs inherit a missing milestone from their first valid closing issue. PRs withou
 
 The job uses inline Node.js and the repository's `GITHUB_TOKEN` with only issue and PR write permissions. It has no checkout, third-party action, build, or test. PR text is parsed as data, never executed. To repair metadata after a missed run, use **Actions → Project tracking → Run workflow**.
 
+Software checks run separately: [`.github/workflows/checks.yml`](../.github/workflows/checks.yml) runs `tests/run.sh` on every PR and every push to `main`, with read-only access to the repository. Its only action, `actions/checkout`, is pinned to a commit.
+
 ## Enforcement boundary
 
 **The workflow does not prevent direct pushes or block merges.** PR-only delivery is project policy; server-side enforcement needs a branch ruleset configured by the owner (require a PR for `main`, block force pushes and deletion). Record that setup in its own operations issue.
