@@ -25,7 +25,7 @@
 
 .padlight-button { border-radius: 10px; padding: 8px 12px; font-weight: 500; }
 
-.padlight-footnote { font-size: 0.8em; }
+.padlight-footnote { font-size: 0.8em; text-align: center; }
 
 /* --- Menu card: colours on a dark menu --- */
 

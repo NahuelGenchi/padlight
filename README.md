@@ -124,7 +124,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Model and firmware</strong></td>
-    <td>The model number on the controller's label, such as 1914 for the Series X|S controller, and the firmware version it reports. The driver and the device file are listed underneath.</td>
+    <td>The model number on the controller's label, such as 1914 for the Series X|S controller, and the firmware version it reports. The driver and the device file are listed underneath. When a controller on Bluetooth runs older firmware than the newest Padlight knows of, the firmware icon turns orange and a line points to the Xbox Accessories app on Windows or an Xbox console, since Linux has no updater for it. That list of versions ships with Padlight, so it can fall behind until the next release, and firmware is not compared over USB yet.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Live picture</strong></td>
@@ -224,6 +224,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device |
 | `src/battery.js` | Battery readings from UPower |
+| `src/firmware.js` | The newest firmware known for each controller, for the update hint |
 | `src/controllerCard.js` | The card: header, picture, tiles, buttons, and the empty state |
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
 | `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a short vibration |

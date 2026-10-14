@@ -4,6 +4,7 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {formatTime} from 'resource:///org/gnome/shell/misc/dateUtils.js';
@@ -116,6 +117,7 @@ function facts(controller, battery, usbIcon) {
             caption: 'Firmware',
             value: controller.firmware,
             icon: {icon_name: 'application-x-firmware-symbolic'},
+            warning: Boolean(controller.firmwareUpdate),
         });
     }
     if (controller.driver)
@@ -188,6 +190,19 @@ export const ControllerCard = GObject.registerClass({
 
         const all = facts(controller, battery, assets.usbIcon);
         this.add_child(grid(all.slice(0, TILES).map(tile)));
+
+        // Linux has no firmware updater for these controllers
+        if (controller.firmwareUpdate) {
+            const update = new St.Label({
+                text: `Firmware ${controller.firmwareUpdate} is available. Update the controller ` +
+                    'in the Xbox Accessories app on Windows, or on an Xbox console.',
+                style_class: 'padlight-footnote padlight-dim',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+            update.clutter_text.line_wrap = true;
+            update.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+            this.add_child(update);
+        }
 
         const actions = [];
         if (controller.rumble) {
