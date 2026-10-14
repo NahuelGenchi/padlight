@@ -116,7 +116,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Battery</strong></td>
-    <td>The charge, and whether it is charging, for controllers whose driver reports it to UPower. On a cable it reads <em>On USB power</em>. At 20% and below, the battery icon turns orange.</td>
+    <td>The charge, and whether it is charging, for controllers whose driver reports it to UPower. On a cable it reads <em>On USB power</em>. At 20% and below, the battery icon turns orange; the level can be changed in Padlight Settings.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Connection</strong></td>
@@ -147,6 +147,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>Opens the Bluetooth page of Settings, to pair a new controller.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Padlight Settings</strong></td>
+    <td>Opens Padlight's settings window, which the Extensions app also opens. For now it holds one setting: the battery level that counts as low, from 5% to 50%.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Your theme</strong></td>
     <td>The card takes its colors from the menu around it, so it suits dark and light styles and other shell themes.</td>
   </tr>
@@ -175,7 +179,9 @@ Then log out and back in, because GNOME Shell only loads a new extension when yo
 
 <br>
 
-`install.sh` packs `src/` with `gnome-extensions pack`, installs it in `~/.local/share/gnome-shell/extensions/padlight@nahuelgenchi.github.io/` with `gnome-extensions install`, and switches it on for your user. It needs no administrator rights and changes nothing outside your home folder. Once installed, Padlight also appears in the Extensions app, where you can switch it off and on.
+`install.sh` packs `src/` with `gnome-extensions pack`, installs it in `~/.local/share/gnome-shell/extensions/padlight@nahuelgenchi.github.io/` with `gnome-extensions install`, and switches it on for your user. It needs no administrator rights and changes nothing outside your home folder. Once installed, Padlight also appears in the Extensions app, where you can switch it off and on and open its settings.
+
+Padlight keeps its settings with your other GNOME settings, under `/org/gnome/shell/extensions/padlight/`. Removing Padlight leaves them in place; `dconf reset -f /org/gnome/shell/extensions/padlight/` clears them.
 
 Developed on Ubuntu 26.04 with GNOME Shell 50.1 on Wayland. Other distributions have not been tried yet.
 
@@ -228,6 +234,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
 | `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a short vibration |
 | `src/stylesheet.css` | The card's look on dark and light menus |
+| `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |
 | `install.sh` | Install, update, pack or remove |
 

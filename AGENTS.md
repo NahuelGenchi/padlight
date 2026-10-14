@@ -22,6 +22,8 @@ Never describe something as working or complete unless a recorded check establis
 | `src/monitor.py` | Prints the controller's input state as JSON lines |
 | `src/rumble.py` | Plays a short vibration |
 | `src/stylesheet.css` | The card's look on dark and light menus |
+| `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
+| `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
 | `docs/` | Tracking guide and README images |

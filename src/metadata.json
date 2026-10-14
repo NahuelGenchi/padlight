@@ -6,5 +6,6 @@
     "50"
   ],
   "url": "https://github.com/NahuelGenchi/padlight",
+  "settings-schema": "org.gnome.shell.extensions.padlight",
   "version": 1
 }

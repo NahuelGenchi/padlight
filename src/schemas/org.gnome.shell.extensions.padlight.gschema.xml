@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 Nahuel Genchi
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.padlight" path="/org/gnome/shell/extensions/padlight/">
+    <key name="low-battery-level" type="i">
+      <range min="5" max="50"/>
+      <default>20</default>
+      <summary>Low battery level</summary>
+      <description>The charge, in percent, at or below which a controller's battery counts as low and its icon turns orange.</description>
+    </key>
+  </schema>
+</schemalist>
