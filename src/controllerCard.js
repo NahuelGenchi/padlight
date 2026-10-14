@@ -206,6 +206,15 @@ export const ControllerCard = GObject.registerClass({
         if (actions.length)
             this.add_child(grid(actions));
 
+        // Filled in by setUsers() once Padlight has looked
+        this._users = new St.Label({
+            style_class: 'padlight-footnote padlight-dim',
+            x_align: Clutter.ActorAlign.CENTER,
+            visible: false,
+        });
+        this._users.clutter_text.line_wrap = true;
+        this.add_child(this._users);
+
         const rest = all.slice(TILES).map(fact => `${fact.caption} ${fact.value}`);
         if (rest.length && !compact) {
             this.add_child(new St.Label({
@@ -218,6 +227,16 @@ export const ControllerCard = GObject.registerClass({
 
     get view() {
         return this._view;
+    }
+
+    /**
+     * Shows which programs have the controller open.
+     *
+     * @param {string[]} names - readable program names, none if nothing has it open
+     */
+    setUsers(names) {
+        this._users.text = `In use by ${names.join(', ')}`;
+        this._users.visible = names.length > 0;
     }
 });
 

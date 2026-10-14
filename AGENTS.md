@@ -2,7 +2,7 @@
 
 ## The project
 
-Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus two small Python 3 helpers that read the controller and make it vibrate through evdev, standard library only. `README.md` describes the features.
+Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus small Python 3 helpers, standard library only: two read the controller and make it vibrate through evdev, and one lists the programs that have it open. `README.md` describes the features.
 
 It is an independent project, not affiliated with Microsoft. Xbox is a trademark of Microsoft.
 
@@ -21,6 +21,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
 | `src/monitor.py` | Prints the controller's input state as JSON lines |
 | `src/rumble.py` | Plays a short vibration |
+| `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
@@ -29,7 +30,7 @@ Never describe something as working or complete unless a recorded check establis
 ## Commands
 
 - `./install.sh` installs or updates the extension for the current user and switches it on; `./install.sh --pack` only builds the package; `./install.sh --uninstall` removes it. A running Wayland session loads new extension code only at the next log-in.
-- `for f in src/*.js; do node --check "$f"; done` and `python3 -m py_compile src/monitor.py src/rumble.py` are the source checks. There is no test suite yet.
+- `for f in src/*.js; do node --check "$f"; done` and `python3 -m py_compile src/monitor.py src/rumble.py src/inuse.py` are the source checks. There is no test suite yet.
 - In a real session, `journalctl --user -b | grep -i padlight` shows the extension's errors.
 
 ## Working well here
