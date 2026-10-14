@@ -4,6 +4,7 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {formatTime} from 'resource:///org/gnome/shell/misc/dateUtils.js';
@@ -213,6 +214,7 @@ export const ControllerCard = GObject.registerClass({
             visible: false,
         });
         this._users.clutter_text.line_wrap = true;
+        this._users.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
         this.add_child(this._users);
 
         const rest = all.slice(TILES).map(fact => `${fact.caption} ${fact.value}`);
