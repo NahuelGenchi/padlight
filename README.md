@@ -199,15 +199,17 @@ flowchart TB
     kernel["<b>Linux</b><br/>/dev/input, sysfs"]
     upower["<b>UPower</b><br/>battery readings"]
     subgraph shell["GNOME Shell"]
-        ext["<b>extension.js</b><br/>top-bar icon, menu"]
-        card["<b>controllerCard.js</b><br/>card and live picture"]
+        ext["<b>extension.js</b><br/>icon and menu"]
+        card["<b>controllerCard.js</b><br/>card, live picture"]
     end
-    monitor["<b>monitor.py</b><br/>buttons and sticks"]
-    rumble["<b>rumble.py</b><br/>short vibration"]
-    kernel --> monitor
-    kernel -->|"controllers come and go"| shell
+    subgraph helpers["Python helpers"]
+        monitor["<b>monitor.py</b><br/>buttons, sticks"]
+        rumble["<b>rumble.py</b><br/>short vibration"]
+    end
+    kernel --> shell
     upower --> shell
     ext --> card
+    kernel --> monitor
     monitor -->|"while the menu is open"| card
     card -->|"Test Vibration"| rumble
 ```
