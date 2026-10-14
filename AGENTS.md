@@ -16,10 +16,12 @@ Never describe something as working or complete unless a recorded check establis
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
 | `src/battery.js` | Battery readings from UPower, matched to a controller |
-| `src/controllerCard.js` | The menu card: header, live picture, information tiles, buttons, and the empty state |
-| `src/controllerView.js` | The live picture; runs `monitor.py` only while the menu is open |
+| `src/controllerCard.js` | The menu card: header, live picture or stick check and their tabs, information tiles, buttons, and the empty state |
+| `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
-| `src/monitor.py` | Prints the controller's input state as JSON lines |
+| `src/controllerCheck.js` | The stick check: raw stick positions, the triggers, where each stick rests |
+| `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
+| `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
 | `src/rumble.py` | Plays a short vibration |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
