@@ -186,8 +186,9 @@ Developed on Ubuntu 26.04 with GNOME Shell 50.1 on Wayland. Other distributions 
 | Controller | Connection | Status |
 | :--- | :--- | :--- |
 | Xbox Series X\|S controller (model 1914) | USB cable, `xpad` driver | Tried on real hardware |
-| Xbox Series X\|S controller | Bluetooth | Tried with a simulated controller only ([#3](https://github.com/NahuelGenchi/padlight/issues/3)) |
-| Xbox controllers | Xbox Wireless Adapter | Not tried yet ([#3](https://github.com/NahuelGenchi/padlight/issues/3)) |
+| Xbox Series X\|S controller (model 1914) | Bluetooth, the kernel's own `hid-microsoft` driver | Tried on real hardware ([#3](https://github.com/NahuelGenchi/padlight/issues/3)). The battery shows its charge, but not whether it is charging: over Bluetooth, the reading comes from BlueZ as a percentage only. |
+| Xbox Series X\|S controller | Bluetooth, `xpadneo` driver | Not tried yet ([#13](https://github.com/NahuelGenchi/padlight/issues/13)) |
+| Xbox controllers | Xbox Wireless Adapter | Not tried yet ([#14](https://github.com/NahuelGenchi/padlight/issues/14)) |
 | Other Xbox and Xbox-compatible controllers | USB or Bluetooth | Recognized, not tried on hardware yet; the picture is always the Series X\|S controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)) |
 
 Padlight recognizes a controller by Microsoft's vendor ID, by an Xbox name, or by the `xpad`, `xpadneo` or `xone` driver. It leaves out the virtual controllers that Steam Input and game streaming create, so each real controller appears once.
@@ -236,7 +237,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 Padlight is young. What is on this page works today. Next on the list:
 
 - **An icon of its own** for the top bar, instead of the Xbox logo ([#5](https://github.com/NahuelGenchi/padlight/issues/5)).
-- **Bluetooth and the Xbox Wireless Adapter**, tried on real hardware ([#3](https://github.com/NahuelGenchi/padlight/issues/3)).
+- **The xpadneo driver and the Xbox Wireless Adapter**, tried on real hardware ([#13](https://github.com/NahuelGenchi/padlight/issues/13), [#14](https://github.com/NahuelGenchi/padlight/issues/14)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
 
