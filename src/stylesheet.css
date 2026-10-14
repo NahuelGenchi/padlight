@@ -1,0 +1,74 @@
+/* SPDX-FileCopyrightText: 2026 Nahuel Genchi */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+
+/* Panel icon while a controller is connected */
+.padlight-active { color: #107c10; }
+
+/* --- Menu card: layout --- */
+
+.padlight-card-item { padding: 8px; }
+.padlight-card { width: 332px; spacing: 10px; }
+
+.padlight-header { spacing: 10px; padding: 0 2px; }
+.padlight-logo { icon-size: 32px; }
+.padlight-title { font-size: 1.08em; font-weight: bold; }
+.padlight-subtitle { font-size: 0.88em; }
+
+.padlight-hero { border-radius: 14px; border-width: 1px; }
+.padlight-hero-empty { spacing: 14px; padding: 24px 16px 22px 16px; }
+.padlight-hint { font-size: 0.9em; text-align: center; }
+
+.padlight-tile { border-radius: 10px; padding: 8px 10px; spacing: 10px; }
+.padlight-tile-icon { icon-size: 18px; }
+.padlight-caption { font-size: 0.8em; }
+.padlight-value { font-weight: 500; }
+
+.padlight-button { border-radius: 10px; padding: 8px 12px; font-weight: 500; }
+
+.padlight-footnote { font-size: 0.8em; }
+
+/* --- Menu card: colours on a dark menu --- */
+
+.padlight-on-dark .padlight-title { color: #f5f5f5; }
+.padlight-on-dark .padlight-value,
+.padlight-on-dark .padlight-button { color: #e6e6e6; }
+.padlight-on-dark .padlight-dim { color: rgba(255, 255, 255, 0.5); }
+.padlight-on-dark .padlight-faint { color: rgba(255, 255, 255, 0.32); }
+.padlight-on-dark .padlight-tile-icon { color: rgba(255, 255, 255, 0.72); }
+.padlight-on-dark .padlight-accent { color: #3fd43f; }
+.padlight-on-dark .padlight-warning { color: #ffb02e; }
+
+.padlight-on-dark .padlight-hero {
+    background-gradient-direction: vertical;
+    background-gradient-start: rgba(255, 255, 255, 0.09);
+    background-gradient-end: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.07);
+}
+.padlight-on-dark .padlight-tile { background-color: rgba(255, 255, 255, 0.06); }
+.padlight-on-dark .padlight-button { background-color: rgba(255, 255, 255, 0.1); }
+.padlight-on-dark .padlight-button:hover { background-color: rgba(255, 255, 255, 0.17); }
+.padlight-on-dark .padlight-button:active { background-color: rgba(255, 255, 255, 0.24); }
+
+/* --- Menu card: colours on a light menu --- */
+
+.padlight-on-light .padlight-title { color: #1c1c1e; }
+.padlight-on-light .padlight-value,
+.padlight-on-light .padlight-button { color: #2a2a2c; }
+.padlight-on-light .padlight-dim { color: rgba(0, 0, 0, 0.52); }
+.padlight-on-light .padlight-faint { color: rgba(0, 0, 0, 0.3); }
+.padlight-on-light .padlight-tile-icon { color: rgba(0, 0, 0, 0.66); }
+.padlight-on-light .padlight-accent { color: #107c10; }
+.padlight-on-light .padlight-warning { color: #c25e00; }
+
+.padlight-on-light .padlight-hero {
+    background-gradient-direction: vertical;
+    background-gradient-start: rgba(0, 0, 0, 0.035);
+    background-gradient-end: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.05);
+}
+.padlight-on-light .padlight-tile { background-color: rgba(0, 0, 0, 0.055); }
+.padlight-on-light .padlight-button { background-color: rgba(0, 0, 0, 0.08); }
+.padlight-on-light .padlight-button:hover { background-color: rgba(0, 0, 0, 0.13); }
+.padlight-on-light .padlight-button:active { background-color: rgba(0, 0, 0, 0.19); }
+
+.padlight-button:focus { box-shadow: inset 0 0 0 2px -st-accent-color; }

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- SPDX-FileCopyrightText: 2026 Nahuel Genchi -->
+  <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+  <!-- USB trident. Filled shapes only: symbolic icons are recoloured by fill. -->
+  <g fill="#2e3436">
+    <path d="M8 0.6 L10.3 3.6 H5.7 Z"/>
+    <rect x="7.35" y="3.2" width="1.3" height="9.6"/>
+    <path d="M7.35 11.5 L3.65 9.1 V6.6 H4.95 V8.4 L7.35 9.95 Z"/>
+    <path d="M8.65 9.9 L12.35 7.7 V5.6 H11.05 V6.95 L8.65 8.4 Z"/>
+    <circle cx="8" cy="13.6" r="1.8"/>
+    <circle cx="4.3" cy="5.9" r="1.45"/>
+    <rect x="10.4" y="3.2" width="2.6" height="2.6"/>
+  </g>
+</svg>
