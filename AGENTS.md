@@ -29,7 +29,7 @@ Never describe something as working or complete unless a recorded check establis
 ## Commands
 
 - `./install.sh` installs or updates the extension for the current user and switches it on; `./install.sh --pack` only builds the package; `./install.sh --uninstall` removes it. A running Wayland session loads new extension code only at the next log-in.
-- `for f in src/*.js; do node --check "$f"; done` and `python3 -m py_compile src/monitor.py src/rumble.py` are the source checks. There is no test suite yet.
+- `for f in src/*.js; do node --check "$f"; done` and `PYTHONPYCACHEPREFIX="$(mktemp -d)" python3 -m py_compile src/monitor.py src/rumble.py` are the source checks. The prefix keeps Python's compiled files out of `src/`. There is no test suite yet.
 - In a real session, `journalctl --user -b | grep -i padlight` shows the extension's errors.
 
 ## Working well here
