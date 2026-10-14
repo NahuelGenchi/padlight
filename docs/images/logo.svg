@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- SPDX-FileCopyrightText: 2026 Nahuel Genchi -->
+  <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+  <!-- Padlight: a game controller whose middle light glows green -->
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#36403a"/>
+      <stop offset=".55" stop-color="#1a201c"/>
+      <stop offset="1" stop-color="#0e1210"/>
+    </linearGradient>
+    <radialGradient id="ambient" cx=".5" cy=".62" r=".5">
+      <stop offset="0" stop-color="#3fd43f" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#3fd43f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".6" stop-color="#e9edeb"/>
+      <stop offset="1" stop-color="#c3cbc6"/>
+    </linearGradient>
+    <radialGradient id="light">
+      <stop offset="0" stop-color="#d8ffd2"/>
+      <stop offset=".35" stop-color="#4be04b"/>
+      <stop offset="1" stop-color="#3fd43f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-40%" width="160%" height="180%">
+      <feGaussianBlur stdDeviation="4.5"/>
+    </filter>
+    <path id="body" d="M64 45C55 45 49 42 40 42C30 42 24 46 21 54C17 64 13 82 15 94C16.5 102 25 106 31 100C35 96 39 88 45 85C51 82.5 57 83 64 83C71 83 77 82.5 83 85C89 88 93 96 97 100C103 106 111.5 102 113 94C115 82 111 64 107 54C104 46 98 42 88 42C79 42 73 45 64 45Z"/>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#badge)"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#ambient)"/>
+  <rect x="4.5" y="4.5" width="119" height="119" rx="27.5" fill="none" stroke="#fff" stroke-opacity=".12"/>
+  <use href="#body" fill="#3fd43f" opacity=".6" filter="url(#glow)"/>
+  <use href="#body" fill="url(#pad)"/>
+  <g fill="#1f2622">
+    <circle cx="41" cy="57" r="8"/>
+    <circle cx="76" cy="71" r="7"/>
+    <path d="M50.2 65.5h4v4h4v4h-4v4h-4v-4h-4v-4h4z"/>
+    <circle cx="87" cy="51" r="2.6"/>
+    <circle cx="93" cy="57" r="2.6"/>
+    <circle cx="87" cy="63" r="2.6"/>
+    <circle cx="81" cy="57" r="2.6"/>
+  </g>
+  <g fill="#5b645f">
+    <circle cx="41" cy="57" r="4.6"/>
+    <circle cx="76" cy="71" r="4"/>
+  </g>
+  <circle cx="64" cy="55" r="10" fill="url(#light)"/>
+  <circle cx="64" cy="55" r="3.8" fill="#3fd43f"/>
+  <circle cx="62.9" cy="53.9" r="1.4" fill="#f0fff0"/>
+</svg>
