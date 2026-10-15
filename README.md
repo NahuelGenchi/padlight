@@ -132,6 +132,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>Buttons, sticks, triggers and the d-pad, mirrored as you press them while the menu is open.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Stick check</strong></td>
+    <td>The <em>Sticks</em> tab under the picture shows each stick's exact position, before any dead zone, how far each trigger is pulled, and where each stick rests once you let go. A stick that rests more than 10% of the way from the centre gets a warning: many games ignore about that much, so beyond it a worn stick can move a game by itself (drift).</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Test Vibration</strong></td>
     <td>A short rumble to check the motors, on controllers that can vibrate.</td>
   </tr>
@@ -222,7 +226,7 @@ flowchart TB
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture; when the menu closes, the helper stops.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture or the stick check; when the menu closes, the helper stops.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
 - **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going and for battery changes.
@@ -232,8 +236,10 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device |
 | `src/battery.js` | Battery readings from UPower |
-| `src/controllerCard.js` | The card: header, picture, tiles, buttons, and the empty state |
+| `src/controllerCard.js` | The card: header, the picture or the stick check and their tabs, tiles, buttons, and the empty state |
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
+| `src/controllerCheck.js` | The stick check: the sticks before any dead zone, the triggers, where the sticks rest |
+| `src/inputMonitor.js` | Runs `monitor.py` for a card while the menu is open |
 | `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a short vibration |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |

@@ -89,6 +89,23 @@ class MonitorTest(unittest.TestCase):
         state = pad.state()
         self.assertEqual((state['lx'], state['ly']), (0, 0.1))
 
+    def test_raw_keeps_the_dead_zone_and_finer_steps(self):
+        """--raw, for the stick check: no dead zone, three decimals"""
+        pad = controller(XPAD)
+        pad.feed(events((EV_ABS, ABS_X, 100), (EV_ABS, ABS_Y, 3277), (EV_ABS, ABS_Z, 333)))
+        plain, raw = pad.state(), pad.state(raw=True)
+        self.assertEqual((plain['lx'], plain['ly'], plain['lt']), (0, 0.1, 0.33))
+        self.assertEqual((raw['lx'], raw['ly'], raw['lt']), (0.003, 0.1, 0.326))
+
+    def test_raw_bluetooth_rest(self):
+        """A Bluetooth stick at rest sits half a step off the middle, which rounds to 0"""
+        pad = controller(BLUETOOTH)
+        self.assertEqual(pad.state(raw=True), RESTING)
+        pad.feed(events((EV_ABS, ABS_X, 32768 + 1000), (EV_ABS, ABS_RZ, 32768 - 3000)))
+        raw = pad.state(raw=True)
+        self.assertEqual((raw['lx'], raw['ry']), (0.031, -0.092))
+        self.assertEqual((pad.state()['lx'], pad.state()['ry']), (0, 0))
+
     def test_keys_held_at_start_and_released(self):
         pad = controller(XPAD, held=(BTN_B,))
         self.assertEqual(pad.state()['buttons'], ['b'])

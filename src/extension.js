@@ -38,7 +38,9 @@ class PadlightIndicator extends PanelMenu.Button {
         this._batteryRequest = 0;
         this._shown = null;
         this._scanId = 0;
-        this._views = [];
+        this._cards = [];
+        // What each controller's card shows, kept while the menu is rebuilt
+        this._modes = new Map();
         this._extension = extension;
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
 
@@ -74,15 +76,15 @@ class PadlightIndicator extends PanelMenu.Button {
                     this._scanLater();
             });
 
-        // The controller pictures are only live while the menu is showing.
+        // The cards only read the controllers while the menu is showing.
         this.menu.connect('open-state-changed', (_menu, open) => {
             if (open)
                 this._scan();
-            for (const view of this._views) {
+            for (const card of this._cards) {
                 if (open)
-                    view.start();
+                    card.start();
                 else
-                    view.stop();
+                    card.stop();
             }
         });
 
@@ -144,7 +146,11 @@ class PadlightIndicator extends PanelMenu.Button {
 
     _buildMenu(lowBattery) {
         this.menu.removeAll();
-        this._views = [];
+        this._cards = [];
+        for (const path of this._modes.keys()) {
+            if (!this._controllers.some(c => c.path === path))
+                this._modes.delete(path);
+        }
 
         if (!this._controllers.length) {
             this._addCard(new EmptyCard(this._assets));
@@ -154,7 +160,9 @@ class PadlightIndicator extends PanelMenu.Button {
         const compact = this._controllers.length > 1;
         for (const controller of this._controllers) {
             const card = new ControllerCard(controller,
-                batteryFor(controller, this._batteries), this._assets, {compact, lowBattery});
+                batteryFor(controller, this._batteries), this._assets,
+                {compact, lowBattery, mode: this._modes.get(controller.path)});
+            card.connect('mode-changed', (_card, mode) => this._modes.set(controller.path, mode));
             card.connect('rumble',
                 () => spawn(['python3', this._rumbleScript, controller.eventNode]));
             card.connect('disconnect', () => {
@@ -164,9 +172,9 @@ class PadlightIndicator extends PanelMenu.Button {
             this._addCard(card);
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-            this._views.push(card.view);
+            this._cards.push(card);
             if (this.menu.isOpen)
-                card.view.start();
+                card.start();
         }
 
         const bluetooth = new PopupMenu.PopupMenuItem('Bluetooth Settings');
@@ -200,7 +208,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._upowerId = 0;
         this._settings.disconnect(this._settingsId);
         this._settings = null;
-        this._views = [];
+        this._cards = [];
         super.destroy();
     }
 });
