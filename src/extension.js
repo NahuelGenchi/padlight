@@ -16,6 +16,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {batteryFor, listBatteries} from './battery.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {DEFAULT_VIBRATION} from './vibrationLab.js';
 
 const DIMMED = 110;
 
@@ -68,8 +69,10 @@ class PadlightIndicator extends PanelMenu.Button {
         this._shown = null;
         this._scanId = 0;
         this._cards = [];
-        // What each controller's card shows, kept while the menu is rebuilt
+        // What each controller's card shows, and its vibration lab's values,
+        // kept while the menu is rebuilt
         this._modes = new Map();
+        this._vibrations = new Map();
         this._cardsByPath = new Map();
         // Programs that have each controller open, by controller
         this._users = new Map();
@@ -212,9 +215,11 @@ class PadlightIndicator extends PanelMenu.Button {
         this.menu.removeAll();
         this._cards = [];
         this._cardsByPath.clear();
-        for (const path of this._modes.keys()) {
-            if (!this._controllers.some(c => c.path === path))
-                this._modes.delete(path);
+        for (const map of [this._modes, this._vibrations]) {
+            for (const path of map.keys()) {
+                if (!this._controllers.some(c => c.path === path))
+                    map.delete(path);
+            }
         }
         for (const path of this._users.keys()) {
             if (!this._controllers.some(c => c.path === path))
@@ -228,12 +233,20 @@ class PadlightIndicator extends PanelMenu.Button {
 
         const compact = this._controllers.length > 1;
         for (const controller of this._controllers) {
+            if (!this._vibrations.has(controller.path))
+                this._vibrations.set(controller.path, {...DEFAULT_VIBRATION});
             const card = new ControllerCard(controller,
-                batteryFor(controller, this._batteries), this._assets,
-                {compact, lowBattery, mode: this._modes.get(controller.path)});
+                batteryFor(controller, this._batteries), this._assets, {
+                    compact,
+                    lowBattery,
+                    mode: this._modes.get(controller.path),
+                    vibration: this._vibrations.get(controller.path),
+                });
             card.connect('mode-changed', (_card, mode) => this._modes.set(controller.path, mode));
             card.connect('rumble',
                 () => spawn(['python3', this._rumbleScript, controller.eventNode]));
+            card.connect('play', (_card, strong, weak, length) => spawn(['python3', this._rumbleScript,
+                '--strong', `${strong}`, '--weak', `${weak}`, '--length', `${length}`, controller.eventNode]));
             card.connect('disconnect', () => {
                 this.menu.close();
                 spawn(['bluetoothctl', 'disconnect', controller.address]);
