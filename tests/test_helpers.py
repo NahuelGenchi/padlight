@@ -117,6 +117,73 @@ class MonitorTest(unittest.TestCase):
         self.assertEqual(pad.state(), RESTING)
 
 
+class ActivityTest(unittest.TestCase):
+    """monitor.py --activity, for keeping the screen awake: what counts as use"""
+
+    def stick(self, share):
+        """A Bluetooth LE stick value this share of the way from the centre"""
+        return round(32768 + share * 32767)
+
+    def test_a_press_counts_and_a_release_alone_does_not(self):
+        pad = controller(BLUETOOTH)
+        self.assertTrue(pad.in_use(events((EV_KEY, BTN_A, 1))))
+        self.assertFalse(pad.in_use(events((EV_KEY, BTN_A, 0))))
+        self.assertTrue(pad.in_use(events((EV_KEY, BTN_B, 1), (EV_KEY, BTN_B, 0))),
+                        'pressed and released between two looks')
+
+    def test_a_stick_counts_from_a_quarter_of_its_way(self):
+        pad = controller(BLUETOOTH)
+        self.assertFalse(pad.in_use(events((EV_ABS, ABS_X, self.stick(0.15)))), 'drifting')
+        self.assertTrue(pad.in_use(events((EV_ABS, ABS_X, self.stick(0.3)))), 'pushed')
+        self.assertTrue(pad.in_use(events((EV_ABS, ABS_RZ, self.stick(-0.6)), (EV_ABS, ABS_RZ, 32768))),
+                        'pushed and let go between two looks')
+
+    def test_a_trigger_counts_from_a_quarter_and_the_d_pad_at_once(self):
+        pad = controller(BLUETOOTH)
+        self.assertFalse(pad.in_use(events((EV_ABS, ABS_BRAKE, 200))), 'resting a finger')
+        self.assertTrue(pad.in_use(events((EV_ABS, ABS_GAS, 300))), 'pulled')
+        self.assertTrue(pad.in_use(events((EV_ABS, ABS_HAT0X, -1))), 'd-pad')
+
+    def test_what_is_held_counts_with_no_new_events(self):
+        self.assertFalse(controller(BLUETOOTH).held(), 'at rest')
+        self.assertTrue(controller(BLUETOOTH, held=(BTN_A,)).held(), 'a button held down')
+        pushed = {**BLUETOOTH, ABS_Y: (self.stick(-0.9), 0, 65535, 4095)}
+        self.assertTrue(controller(pushed).held(), 'a stick held forward')
+        drifting = {**BLUETOOTH, ABS_X: (self.stick(0.12), 0, 65535, 4095)}
+        self.assertFalse(controller(drifting).held(), 'a stick drifting a little')
+
+    def test_xpad_sticks_and_triggers(self):
+        pad = controller(XPAD)
+        self.assertFalse(pad.in_use(events((EV_ABS, ABS_RX, 6000), (EV_ABS, ABS_Z, 200))))
+        self.assertTrue(pad.in_use(events((EV_ABS, ABS_RY, -12000))))
+
+    def test_refresh_reads_what_was_missed(self):
+        fake = FakeController(BLUETOOTH, held=(BTN_A,))
+        with mock.patch.object(monitor.fcntl, 'ioctl', fake.ioctl):
+            pad = monitor.Controller(3)
+            self.assertTrue(pad.held())
+            fake.held = ()
+            fake.axes = {**BLUETOOTH, ABS_GAS: (900, 0, 1023, 63)}
+            pad.refresh()
+            self.assertEqual((pad.keys, pad.held()), (set(), True), 'A let go, RT pulled')
+            fake.axes = BLUETOOTH
+            pad.refresh()
+            self.assertFalse(pad.held())
+
+    def test_drain_reads_everything_waiting(self):
+        read_end, write_end = os.pipe()
+        os.set_blocking(read_end, False)
+        try:
+            self.assertEqual(monitor.drain(read_end), b'')
+            os.write(write_end, events((EV_KEY, BTN_A, 1)))
+            os.write(write_end, events((EV_KEY, BTN_A, 0)))
+            self.assertEqual(monitor.drain(read_end), events((EV_KEY, BTN_A, 1), (EV_KEY, BTN_A, 0)))
+            self.assertEqual(monitor.drain(read_end), b'')
+        finally:
+            os.close(read_end)
+            os.close(write_end)
+
+
 class RumbleTest(unittest.TestCase):
     @unittest.skipUnless(struct.calcsize('l') == 8, 'struct ff_effect is 48 bytes on 64-bit Linux')
     def test_ioctl_number(self):

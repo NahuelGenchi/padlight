@@ -21,7 +21,9 @@ import {Checklist} from './checklist.js';
 import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {KeepAwake} from './keepAwake.js';
 import {Notifier} from './notifications.js';
+import {Pairing, PairingSection} from './pairing.js';
 import {DEFAULT_VIBRATION} from './vibrationLab.js';
 
 const DIMMED = 110;
@@ -111,8 +113,10 @@ class PadlightIndicator extends PanelMenu.Button {
         this._extension = extension;
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
+        this._pairing = new Pairing();
 
-        // A setting changes what the menu or the top bar shows, or which alerts are due.
+        // A setting changes what the menu or the top bar shows, which alerts
+        // are due, or whether the screen is kept awake.
         this._settings = extension.getSettings();
         this._settingsId = this._settings.connect('changed', () => this._sync());
         this._batteryAlerts = batteryAlerts;
@@ -128,6 +132,7 @@ class PadlightIndicator extends PanelMenu.Button {
             usbIcon: Gio.icon_new_for_string(icon('usb-symbolic.svg')),
             monitorScript: GLib.build_filenamev([extension.path, 'monitor.py']),
         };
+        this._keepAwake = new KeepAwake(this._assets.monitorScript);
 
         this._icon = new St.Icon({gicon: this._assets.logo, style_class: 'system-status-icon'});
         this._level = new St.Label({
@@ -167,6 +172,8 @@ class PadlightIndicator extends PanelMenu.Button {
                 else
                     card.stop();
             }
+            if (!open)
+                this._pairing.menuClosed();
         });
 
         this._scan();
@@ -311,6 +318,7 @@ class PadlightIndicator extends PanelMenu.Button {
             if (!this._controllers.some(c => c.path === path))
                 this._stopFinding(path);
         }
+        this._keepAwake.update(this._controllers, this._settings.get_boolean('keep-awake'));
         const lowBattery = this._settings.get_int('low-battery-level');
         this._alertBatteries(lowBattery);
         const shown = JSON.stringify([lowBattery,
@@ -417,6 +425,7 @@ class PadlightIndicator extends PanelMenu.Button {
                 card.start();
         }
 
+        this.menu.addMenuItem(new PairingSection(this._pairing));
         const bluetooth = new PopupMenu.PopupMenuItem('Bluetooth Settings');
         bluetooth.connect('activate', () => spawn(['gnome-control-center', 'bluetooth']));
         this.menu.addMenuItem(bluetooth);
@@ -467,6 +476,8 @@ class PadlightIndicator extends PanelMenu.Button {
     }
 
     destroy() {
+        // Closing the menu runs its handlers, which need everything below.
+        this.menu.close();
         this._cancellable.cancel();
         if (this._scanId)
             GLib.source_remove(this._scanId);
@@ -485,6 +496,8 @@ class PadlightIndicator extends PanelMenu.Button {
         for (const process of this._finding.values())
             process.force_exit();
         this._finding.clear();
+        this._keepAwake.destroy();
+        this._pairing.destroy();
         this._cards = [];
         this._cardsByPath.clear();
         super.destroy();

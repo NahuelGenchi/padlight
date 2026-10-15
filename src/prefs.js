@@ -64,5 +64,17 @@ export default class PadlightPreferences extends ExtensionPreferences {
             window._settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
             topBar.add(row);
         }
+
+        const screen = new Adw.PreferencesGroup({title: 'Screen'});
+        page.add(screen);
+
+        const keepAwake = new Adw.SwitchRow({
+            title: 'Keep the screen awake',
+            subtitle: 'Controller input counts as activity, as keyboard and mouse input does. ' +
+                'While this is on, Padlight reads connected controllers in the background',
+        });
+        window._settings.bind('keep-awake', keepAwake, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
+        screen.add(keepAwake);
     }
 }
