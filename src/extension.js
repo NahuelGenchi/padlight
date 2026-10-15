@@ -10,12 +10,15 @@ import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import {batteryFor, listBatteries} from './battery.js';
+import {batteryFor, batteryIcon, listBatteries} from './battery.js';
+import {alertText, BatteryAlerts} from './batteryAlerts.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {Notifier} from './notifications.js';
 
 const DIMMED = 110;
 
@@ -58,7 +61,7 @@ const deviceNodes = c => [c.eventNode, c.jsNode, ...c.hidrawNodes].filter(Boolea
 
 const PadlightIndicator = GObject.registerClass(
 class PadlightIndicator extends PanelMenu.Button {
-    _init(extension) {
+    _init(extension, batteryAlerts) {
         super._init(0.5, 'Xbox Controller');
 
         this._cancellable = new Gio.Cancellable();
@@ -78,10 +81,10 @@ class PadlightIndicator extends PanelMenu.Button {
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
 
-        // The cards show the low battery level, so a new one redraws them.
+        // A setting changes what the menu shows or which alerts are due.
         this._settings = extension.getSettings();
-        this._settingsId = this._settings.connect('changed::low-battery-level',
-            () => this._sync());
+        this._settingsId = this._settings.connect('changed', () => this._sync());
+        this._batteryAlerts = batteryAlerts;
 
         const icon = name => GLib.build_filenamev([extension.path, 'icons', name]);
         // What the cards in the menu are made of
@@ -97,6 +100,7 @@ class PadlightIndicator extends PanelMenu.Button {
 
         this._icon = new St.Icon({gicon: this._assets.logo, style_class: 'system-status-icon'});
         this.add_child(this._icon);
+        this._notifier = new Notifier(this._assets.logo);
 
         // A controller shows up as new nodes in /dev/input, wired or not.
         this._monitor = Gio.File.new_for_path('/dev/input')
@@ -198,12 +202,32 @@ class PadlightIndicator extends PanelMenu.Button {
             this._icon.remove_style_class_name('padlight-active');
 
         const lowBattery = this._settings.get_int('low-battery-level');
+        this._alertBatteries(lowBattery);
         const shown = JSON.stringify([lowBattery,
             this._controllers.map(c => [c, batteryFor(c, this._batteries)])]);
         if (shown === this._shown)
             return;
         this._shown = shown;
         this._buildMenu(lowBattery);
+    }
+
+    // Sends the low battery alerts that are due.
+    _alertBatteries(lowBattery) {
+        const readings = this._controllers.map(controller =>
+            ({controller, battery: batteryFor(controller, this._batteries)}));
+        const due = this._batteryAlerts.update(readings, lowBattery,
+            this._settings.get_boolean('low-battery-alerts'));
+        for (const {controller, battery, stage} of due) {
+            this._notifier.notify(`battery ${controller.path}`, {
+                ...alertText(controller.name, battery, stage),
+                gicon: new Gio.ThemedIcon({name: batteryIcon(battery)}),
+                // Shown even over a full-screen game, where the controller is
+                // in use, and ahead of notifications waiting for the game to
+                // end. Do Not Disturb still holds it back.
+                urgency: MessageTray.Urgency.HIGH,
+                forFeedback: true,
+            });
+        }
     }
 
     // --- Menu ---
@@ -280,6 +304,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._upowerId = 0;
         this._settings.disconnect(this._settingsId);
         this._settings = null;
+        this._notifier.destroy();
         this._cards = [];
         this._cardsByPath.clear();
         super.destroy();
@@ -288,7 +313,10 @@ class PadlightIndicator extends PanelMenu.Button {
 
 export default class PadlightExtension extends Extension {
     enable() {
-        this._indicator = new PadlightIndicator(this);
+        // Kept while Padlight is off, as it is while the screen is locked, so
+        // unlocking does not repeat an alert
+        this._batteryAlerts ??= new BatteryAlerts();
+        this._indicator = new PadlightIndicator(this, this._batteryAlerts);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 
