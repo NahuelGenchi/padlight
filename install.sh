@@ -20,11 +20,13 @@ cd "$(dirname "$0")"
 
 pack() {
     # metadata.json, extension.js and stylesheet.css go in by default.
+    # Python's caches stay out: extensions.gnome.org rejects binary files.
     set --
     for path in src/*; do
         name=${path#src/}
         case $name in
             metadata.json | extension.js | stylesheet.css) ;;
+            __pycache__ | *.pyc) ;;
             *) set -- "$@" "--extra-source=$name" ;;
         esac
     done

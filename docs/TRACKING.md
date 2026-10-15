@@ -21,8 +21,10 @@ Track all meaningful work: features, bugs, enhancements, docs, research, release
 | M1 | M1 — Indicator and live view | The top-bar icon, the menu card and the live controller picture, plus defects and their fixes |
 | M2 | M2 — More controllers | Wider hardware support: other Xbox models and their pictures, Bluetooth and the Xbox Wireless Adapter tried on real hardware, other drivers |
 | M3 | M3 — Release | Packaging, the extensions.gnome.org listing, and versioned releases |
+| M4 | M4 — Settings and alerts | A settings window and what it controls: notifications, top-bar options, keeping the screen awake, nicknames and idle disconnect |
+| M5 | M5 — Controller tools | Tools in the menu for checking and managing a controller: sticks, triggers and buttons, vibration, finding it, the apps that use it, firmware and pairing |
 
-The first issue is #1 (M0). Later milestones may be created deliberately; assign them directly in GitHub.
+The first issue is #1 (M0). M4 and M5 were added later, in #16. A new milestone also goes into the workflow's milestone list and the issue form, so that both recognize it.
 
 ## Issue and PR conventions
 

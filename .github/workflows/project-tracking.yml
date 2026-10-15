@@ -65,7 +65,9 @@ jobs:
             M0: ['M0 — Project foundation', 'Repository import, documentation, agent instructions, and traceable issue-to-PR delivery.'],
             M1: ['M1 — Indicator and live view', 'The top-bar icon, the menu card and the live controller picture, plus defects and their fixes.'],
             M2: ['M2 — More controllers', 'Wider hardware support: other Xbox models and their pictures, Bluetooth and the Xbox Wireless Adapter tried on real hardware, other drivers.'],
-            M3: ['M3 — Release', 'Packaging, the extensions.gnome.org listing, and versioned releases.']
+            M3: ['M3 — Release', 'Packaging, the extensions.gnome.org listing, and versioned releases.'],
+            M4: ['M4 — Settings and alerts', 'A settings window and what it controls: notifications, top-bar options, keeping the screen awake, nicknames and idle disconnect.'],
+            M5: ['M5 — Controller tools', 'Tools in the menu for checking and managing a controller: sticks, triggers and buttons, vibration, finding it, the apps that use it, firmware and pairing.']
           };
           const existingMilestones = await list('/milestones?state=all');
           const milestones = {};
@@ -99,7 +101,7 @@ jobs:
             const path = `/issues/${item.number}`;
             const body = item.body ?? '';
             const labels = new Set(item.labels.map(label => label.name));
-            const milestoneKey = body.match(/(?:^Milestone:\s*|^### Milestone\s*\n\s*)(M[0-3])\b/im)?.[1];
+            const milestoneKey = body.match(/(?:^Milestone:\s*|^### Milestone\s*\n\s*)(M[0-5])\b/im)?.[1];
             let desired = item.milestone ?? milestones[milestoneKey ?? 'M1'];
             let incomplete = false;
             if (item.pull_request) {

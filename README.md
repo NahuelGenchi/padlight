@@ -187,8 +187,9 @@ Developed on Ubuntu 26.04 with GNOME Shell 50.1 on Wayland. Other distributions 
 | Controller | Connection | Status |
 | :--- | :--- | :--- |
 | Xbox Series X\|S controller (model 1914) | USB cable, `xpad` driver | Tried on real hardware |
-| Xbox Series X\|S controller | Bluetooth | Tried with a simulated controller only ([#3](https://github.com/NahuelGenchi/padlight/issues/3)) |
-| Xbox controllers | Xbox Wireless Adapter | Not tried yet ([#3](https://github.com/NahuelGenchi/padlight/issues/3)) |
+| Xbox Series X\|S controller (model 1914) | Bluetooth, the kernel's own `hid-microsoft` driver | Tried on real hardware ([#3](https://github.com/NahuelGenchi/padlight/issues/3)). The battery shows its charge, but not whether it is charging: over Bluetooth, the reading comes from BlueZ as a percentage only. |
+| Xbox Series X\|S controller | Bluetooth, `xpadneo` driver | Not tried yet ([#13](https://github.com/NahuelGenchi/padlight/issues/13)) |
+| Xbox controllers | Xbox Wireless Adapter | Not tried yet ([#14](https://github.com/NahuelGenchi/padlight/issues/14)) |
 | Other Xbox and Xbox-compatible controllers | USB or Bluetooth | Recognized, not tried on hardware yet; the picture is always the Series X\|S controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)) |
 
 Padlight recognizes a controller by Microsoft's vendor ID, by an Xbox name, or by the `xpad`, `xpadneo` or `xone` driver. It leaves out the virtual controllers that Steam Input and game streaming create, so each real controller appears once.
@@ -238,9 +239,12 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 Padlight is young. What is on this page works today. Next on the list:
 
 - **An icon of its own** for the top bar, instead of the Xbox logo ([#5](https://github.com/NahuelGenchi/padlight/issues/5)).
-- **Bluetooth and the Xbox Wireless Adapter**, tried on real hardware ([#3](https://github.com/NahuelGenchi/padlight/issues/3)).
+- **The xpadneo driver and the Xbox Wireless Adapter**, tried on real hardware ([#13](https://github.com/NahuelGenchi/padlight/issues/13), [#14](https://github.com/NahuelGenchi/padlight/issues/14)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
+- **Settings and alerts**, with notifications for a low battery and for controllers coming and going, top-bar options, keeping the screen awake, nicknames, and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
+- **Controller tools**, such as a stick and trigger check, a button checklist, a vibration lab and Find my controller ([M5](https://github.com/NahuelGenchi/padlight/milestone/6)).
+- **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
 
 | Milestone | Outcome |
 | :--- | :--- |
@@ -248,6 +252,8 @@ Padlight is young. What is on this page works today. Next on the list:
 | [M1 — Indicator and live view](https://github.com/NahuelGenchi/padlight/milestone/2) | The top-bar icon, the card and the live picture, and their fixes |
 | [M2 — More controllers](https://github.com/NahuelGenchi/padlight/milestone/3) | Other Xbox models and their pictures, Bluetooth and the adapter on real hardware |
 | [M3 — Release](https://github.com/NahuelGenchi/padlight/milestone/4) | Packaging, the extensions.gnome.org listing and versioned releases |
+| [M4 — Settings and alerts](https://github.com/NahuelGenchi/padlight/milestone/5) | A settings window, notifications, top-bar options, keeping the screen awake, nicknames and idle disconnect |
+| [M5 — Controller tools](https://github.com/NahuelGenchi/padlight/milestone/6) | Checks for the sticks, triggers, buttons and vibration; finding a controller, the apps using it, firmware hints and pairing |
 
 ## Contributing
 

@@ -31,7 +31,7 @@ Never describe something as working or complete unless a recorded check establis
 ## Commands
 
 - `./install.sh` installs or updates the extension for the current user and switches it on; `./install.sh --pack` only builds the package; `./install.sh --uninstall` removes it. A running Wayland session loads new extension code only at the next log-in.
-- `tests/run.sh` runs the source checks (`node --check` on the JavaScript, `python3 -m py_compile` on the helpers) and the tests in `tests/`. It needs gjs, Node.js and Python 3 but no GNOME session, and the Checks workflow runs it on every PR. A change to detection, battery matching or the helpers comes with a test.
+- `tests/run.sh` runs the source checks (`node --check` on the JavaScript, `python3 -m py_compile` on the helpers) and the tests in `tests/`. It needs gjs, Node.js and Python 3 but no GNOME session, and the Checks workflow runs it on every PR. A change to detection, battery matching or the helpers comes with a test. It keeps Python's compiled files out of `src/`; to compile a helper by hand, do the same with `PYTHONPYCACHEPREFIX="$(mktemp -d)" python3 -m py_compile src/monitor.py`.
 - In a real session, `journalctl --user -b | grep -i padlight` shows the extension's errors.
 
 ## Working well here
