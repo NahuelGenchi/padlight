@@ -65,6 +65,15 @@ test('raw HID nodes, which some programs open instead of the input nodes', () =>
         [['usb', []], ['bluetooth', [`${root}/hidraw3`]]]);
 });
 
+test('a firmware update is offered only where the newest version is known', () => {
+    const {controllers} = scan([SERIES_USB, SERIES_BLE, {...SERIES_BLE, version: '0523', uniq: '00:00:5e:00:53:02', js: 2}]);
+    equal(controllers.map(c => [c.connection, c.firmware, c.firmwareUpdate]), [
+        ['usb', '5.9', null],
+        ['bluetooth', '5.9', '5.23'],
+        ['bluetooth', '5.23', null],
+    ]);
+});
+
 test('virtual pads from Steam Input and game streaming are left out', () => {
     equal(scan([
         {bus: '0003', vendor: '28de', product: '11ff', name: 'Microsoft X-Box 360 pad 0', kind: 'virtual'},

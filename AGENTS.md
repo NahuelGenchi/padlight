@@ -16,6 +16,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
 | `src/battery.js` | Battery readings from UPower, matched to a controller |
+| `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
 | `src/controllerCard.js` | The menu card: header, live picture or stick check and their tabs, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
@@ -29,7 +30,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
-| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, and the Python helpers with fake devices and a made-up `/proc` |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, the firmware table, and the Python helpers with fake devices and a made-up `/proc` |
 | `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 
@@ -59,6 +60,7 @@ Never describe something as working or complete unless a recorded check establis
 - To check `install.sh` and what happens at the next log-in, also point `HOME` and `XDG_CACHE_HOME` at the scratch folder and use `GSETTINGS_BACKEND=keyfile` instead, which keeps settings between commands in `$XDG_CONFIG_HOME/glib-2.0/settings/keyfile`. Run `./install.sh` first, then start the hidden shell: it should load Padlight by itself.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
+- When a newer controller firmware line appears, update `src/firmware.js` with a source, such as a kernel log of a controller running it. Only list versions that were seen, so a current controller is never called out of date.
 - The helpers read input devices without grabbing them, so games keep working, and they only run while the menu is open. Keep both true.
 - Record what a check covered and what it did not, in the PR: hidden shell or real session, simulated or real controller, which connection.
 

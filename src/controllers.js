@@ -4,6 +4,8 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+import {newerFirmware} from './firmware.js';
+
 const BUS_BLUETOOTH = '0005';
 const VENDOR_MICROSOFT = '045e';
 
@@ -139,6 +141,8 @@ export function scanControllers(sysRoot = '/sys', devDir = '/dev/input') {
             connection,
             model: vendor === VENDOR_MICROSOFT ? MODEL_NUMBERS[product] ?? null : null,
             firmware: vendor === VENDOR_MICROSOFT ? firmwareLabel(version) : null,
+            // A newer firmware version, when this one is known to be old
+            firmwareUpdate: vendor === VENDOR_MICROSOFT ? newerFirmware(product, version) : null,
             driver,
             // Bluetooth address of the controller, empty over USB
             address: readText(`${path}/uniq`) || null,
