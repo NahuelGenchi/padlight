@@ -75,7 +75,8 @@ Never describe something as working or complete unless a recorded check establis
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
 - Padlight runs on GNOME Shell 46 to 50, as `src/metadata.json` lists. Write for 50, and keep what differs in `src/shellVersions.js`, found by feature rather than by version number. What to watch for:
   - `St.BoxLayout` has `orientation` only from 48; use `VERTICAL`. The stylesheet's `-st-accent-color` reads as black on 46.
-  - libadwaita is 1.5 on 46, so newer widgets and properties need a check, such as `Adw.EntryRow`'s `max-length` from 1.6.
+  - libadwaita is 1.5 on 46, so newer widgets and properties need a check, such as `Adw.EntryRow`'s `max-length` from 1.6; the nickname rows set the limit on the text field inside the row instead.
+  - `src/prefs.js` runs in the Extensions app, not in the shell, so it cannot import `src/shellVersions.js`, which needs St.
   - gjs is 1.80 on 46, without `Object.groupBy`, `Promise.withResolvers`, the new `Set` methods or `Intl.Segmenter`, and before 1.86 (GNOME 49) there are no iterator helpers or `Promise.try`.
   - On 46, gjs logs once that `Gio.UnixInputStream` has moved, when the live picture first reads its helper. GNOME Shell 46 does the same for any subprocess pipe, so it is not a fault in Padlight.
   - Check a change on the older versions in the same kind of hidden shell, inside a container of a release that has that version (Ubuntu 24.04, Ubuntu 24.10, Debian 13, Ubuntu 25.10), with no network. Make the virtual controller outside the container and let the container open only its device nodes.
