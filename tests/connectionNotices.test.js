@@ -49,4 +49,10 @@ test('what a notice says', () => {
         {title: 'Xbox Wireless Controller disconnected', body: 'Bluetooth'}, 'disconnected');
 });
 
+test('a notice calls a controller by its nickname', () => {
+    const blue = {...pad(BLE), nickname: 'Blue pad'};
+    equal(noticeText(blue, null, true).title, 'Blue pad connected', 'connected');
+    equal(noticeText(blue, null, false).title, 'Blue pad disconnected', 'disconnected');
+});
+
 done();

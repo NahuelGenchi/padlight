@@ -21,7 +21,10 @@ import {Checklist} from './checklist.js';
 import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {KeepAwake} from './keepAwake.js';
+import {controllerName, nicknameKey} from './nicknames.js';
 import {Notifier} from './notifications.js';
+import {Pairing, PairingSection} from './pairing.js';
 import {DEFAULT_VIBRATION} from './vibrationLab.js';
 
 const DIMMED = 110;
@@ -102,6 +105,8 @@ class PadlightIndicator extends PanelMenu.Button {
         this._modes = new Map();
         this._checklists = new Map();
         this._vibrations = new Map();
+        // Find Controller's bursts while they play, by controller
+        this._finding = new Map();
         this._cardsByPath = new Map();
         // Programs that have each controller open, by controller
         this._users = new Map();
@@ -109,10 +114,17 @@ class PadlightIndicator extends PanelMenu.Button {
         this._extension = extension;
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
+        this._pairing = new Pairing();
 
-        // A setting changes what the menu or the top bar shows, or which alerts are due.
+        // A setting changes what the menu or the top bar shows, what the
+        // controllers are called, which alerts are due, or whether the screen
+        // is kept awake.
         this._settings = extension.getSettings();
-        this._settingsId = this._settings.connect('changed', () => this._sync());
+        this._settingsId = this._settings.connect('changed', (_settings, key) => {
+            if (key === 'nicknames' || key === 'nickname-salt')
+                this._nameControllers(this._controllers);
+            this._sync();
+        });
         this._batteryAlerts = batteryAlerts;
 
         const icon = name => GLib.build_filenamev([extension.path, 'icons', name]);
@@ -126,6 +138,7 @@ class PadlightIndicator extends PanelMenu.Button {
             usbIcon: Gio.icon_new_for_string(icon('usb-symbolic.svg')),
             monitorScript: GLib.build_filenamev([extension.path, 'monitor.py']),
         };
+        this._keepAwake = new KeepAwake(this._assets.monitorScript);
 
         this._icon = new St.Icon({gicon: this._assets.logo, style_class: 'system-status-icon'});
         this._level = new St.Label({
@@ -165,6 +178,8 @@ class PadlightIndicator extends PanelMenu.Button {
                 else
                     card.stop();
             }
+            if (!open)
+                this._pairing.menuClosed();
         });
 
         this._scan();
@@ -185,12 +200,42 @@ class PadlightIndicator extends PanelMenu.Button {
 
     _scan() {
         const before = this._controllers;
-        this._controllers = scanControllers();
+        this._controllers = this._nameControllers(scanControllers());
         if (this._scanned)
             this._noticeConnections(before);
         this._scanned = true;
         this._sync();
         this._refreshBatteries();
+    }
+
+    // Gives each controller its nickname, or null when it has none.
+    _nameControllers(controllers) {
+        const salt = this._settings.get_string('nickname-salt');
+        const nicknames = this._settings.get_value('nicknames').deepUnpack();
+        for (const controller of controllers) {
+            const key = nicknameKey(controller, salt);
+            controller.nickname = (key && nicknames[key]?.[0]) || null;
+        }
+        return controllers;
+    }
+
+    // Keeps a nickname typed on a controller's card, with the model's name
+    // for the settings window, or drops it when the box was left empty.
+    _setNickname(controller, nickname) {
+        let salt = this._settings.get_string('nickname-salt');
+        if (!salt) {
+            salt = GLib.uuid_string_random();
+            this._settings.set_string('nickname-salt', salt);
+        }
+        const key = nicknameKey(controller, salt);
+        if (!key)
+            return;
+        const nicknames = this._settings.get_value('nicknames').deepUnpack();
+        if (nickname)
+            nicknames[key] = [nickname, controller.name];
+        else
+            delete nicknames[key];
+        this._settings.set_value('nicknames', new GLib.Variant('a{s(ss)}', nicknames));
     }
 
     async _refreshBatteries() {
@@ -305,6 +350,11 @@ class PadlightIndicator extends PanelMenu.Button {
             this._icon.remove_style_class_name('padlight-active');
 
         this._syncTopBar();
+        for (const path of this._finding.keys()) {
+            if (!this._controllers.some(c => c.path === path))
+                this._stopFinding(path);
+        }
+        this._keepAwake.update(this._controllers, this._settings.get_boolean('keep-awake'));
         const lowBattery = this._settings.get_int('low-battery-level');
         this._alertBatteries(lowBattery);
         const shown = JSON.stringify([lowBattery,
@@ -342,7 +392,7 @@ class PadlightIndicator extends PanelMenu.Button {
             this._settings.get_boolean('low-battery-alerts'));
         for (const {controller, battery, stage} of due) {
             this._notifier.notify(`battery ${controller.path}`, {
-                ...alertText(controller.name, battery, stage),
+                ...alertText(controllerName(controller), battery, stage),
                 gicon: new Gio.ThemedIcon({name: batteryIcon(battery)}),
                 // Shown even over a full-screen game, where the controller is
                 // in use, and ahead of notifications waiting for the game to
@@ -388,12 +438,15 @@ class PadlightIndicator extends PanelMenu.Button {
                     mode: this._modes.get(controller.path),
                     checklist: this._checklists.get(controller.path),
                     vibration: this._vibrations.get(controller.path),
+                    finding: this._finding.has(controller.path),
                 });
             card.connect('mode-changed', (_card, mode) => this._modes.set(controller.path, mode));
+            card.connect('rename', (_card, nickname) => this._setNickname(controller, nickname));
             card.connect('rumble',
                 () => spawn(['python3', this._rumbleScript, controller.eventNode]));
             card.connect('play', (_card, strong, weak, length) => spawn(['python3', this._rumbleScript,
                 '--strong', `${strong}`, '--weak', `${weak}`, '--length', `${length}`, controller.eventNode]));
+            card.connect('find', () => this._toggleFind(controller));
             card.connect('disconnect', () => {
                 this.menu.close();
                 spawn(['bluetoothctl', 'disconnect', controller.address]);
@@ -409,6 +462,7 @@ class PadlightIndicator extends PanelMenu.Button {
                 card.start();
         }
 
+        this.menu.addMenuItem(new PairingSection(this._pairing));
         const bluetooth = new PopupMenu.PopupMenuItem('Bluetooth Settings');
         bluetooth.connect('activate', () => spawn(['gnome-control-center', 'bluetooth']));
         this.menu.addMenuItem(bluetooth);
@@ -428,7 +482,39 @@ class PadlightIndicator extends PanelMenu.Button {
         this.menu.addMenuItem(item);
     }
 
+    // Find Controller: starts the bursts, or stops them while they play.
+    _toggleFind(controller) {
+        if (this._finding.has(controller.path)) {
+            this._stopFinding(controller.path);
+            return;
+        }
+        let process;
+        try {
+            process = Gio.Subprocess.new(['python3', this._rumbleScript, '--find', controller.eventNode],
+                Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
+        } catch (e) {
+            console.error(`padlight: ${e.message}`);
+            return;
+        }
+        this._finding.set(controller.path, process);
+        this._cardsByPath.get(controller.path)?.setFinding(true);
+        // The bursts end by themselves after a few seconds.
+        process.wait_async(null, () => {
+            if (this._finding.get(controller.path) === process)
+                this._stopFinding(controller.path);
+        });
+    }
+
+    // Stopping the helper stops the controller at once.
+    _stopFinding(path) {
+        this._finding.get(path)?.force_exit();
+        this._finding.delete(path);
+        this._cardsByPath.get(path)?.setFinding(false);
+    }
+
     destroy() {
+        // Closing the menu runs its handlers, which need everything below.
+        this.menu.close();
         this._cancellable.cancel();
         if (this._scanId)
             GLib.source_remove(this._scanId);
@@ -444,6 +530,11 @@ class PadlightIndicator extends PanelMenu.Button {
         this._settings.disconnect(this._settingsId);
         this._settings = null;
         this._notifier.destroy();
+        for (const process of this._finding.values())
+            process.force_exit();
+        this._finding.clear();
+        this._keepAwake.destroy();
+        this._pairing.destroy();
         this._cards = [];
         this._cardsByPath.clear();
         super.destroy();

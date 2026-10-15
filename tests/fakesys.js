@@ -55,8 +55,9 @@ function removeTree(path) {
 /**
  * Makes a tree with the given input devices. Each device has a bus, vendor,
  * product, name, and optionally version, kind ('usb', 'uhid' for Bluetooth LE,
- * 'virtual' for a made-up pad), driver, uniq, event and js numbers (null for
- * none), keys, ff, powerSupplies and hidraw numbers.
+ * 'virtual' for a made-up pad), driver, uniq, a USB serial number, event and
+ * js numbers (null for none), keys, ff, powerSupplies and hidraw numbers.
+ * The USB root hub has a serial number of its own, as on a real computer.
  *
  * @param {object[]} devices
  * @returns {{sys: string, dev: string, remove: Function}}
@@ -67,6 +68,7 @@ export function makeTree(devices) {
     const dev = `${root}/dev/input`;
     mkdir(`${sys}/class/input`);
     mkdir(dev);
+    write(`${sys}/devices/pci0000:00/0000:00:14.0/usb1/serial`, '0000:00:14.0\n');
 
     devices.forEach((device, index) => {
         const number = 20 + index;
@@ -93,6 +95,9 @@ export function makeTree(devices) {
         if (parent) {
             mkdir(parent);
             link(`${input}/device`, parent);
+            // The USB device, above its interface
+            if (kind === 'usb' && device.serial)
+                write(`${GLib.path_get_dirname(parent)}/serial`, `${device.serial}\n`);
             if (device.driver) {
                 const driver = `${sys}/bus/${kind === 'usb' ? 'usb' : 'hid'}/drivers/${device.driver}`;
                 mkdir(driver);

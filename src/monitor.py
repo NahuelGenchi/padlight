@@ -8,6 +8,11 @@ Stick values run from -1 to 1 and trigger values from 0 to 1. The live
 picture gets the sticks with the driver's dead zone taken out; --raw leaves it
 in and gives finer steps, for the stick check.
 
+monitor.py --activity /dev/input/eventN only says that the controller is in
+use, as {"input":true}, at most every ACTIVITY_EVERY seconds, for keeping the
+screen awake. A button counts, and so does a stick or trigger moved at least
+MOVED of its way; a stick that drifts less than that does not.
+
 Reading does not take the device away from games; every reader gets its own
 copy of the events. Ends when the controller goes away or nobody is listening.
 """
@@ -37,6 +42,13 @@ INPUT_EVENT = struct.Struct('llHHi')
 ABSINFO = struct.Struct('iiiiii')   # value, minimum, maximum, fuzz, flat, resolution
 KEY_BYTES = 96
 MAX_RATE = 60
+
+# --activity: how often, at most, to say the controller is in use, how far a
+# stick or trigger has to go to count, and how long to rest after events that
+# did not count, such as a stick drifting by itself
+ACTIVITY_EVERY = 5
+MOVED = 0.25
+QUIET_REST = 0.5
 
 
 def ioc_read(nr, size):
@@ -77,6 +89,42 @@ class Controller:
         held = bytearray(KEY_BYTES)
         fcntl.ioctl(fd, ioc_read(0x18, len(held)), held)
         self.keys = {code for code in KEYS if has_bit(held, code)}
+
+    def refresh(self):
+        """Reads again what is held right now, which also covers presses and
+        releases missed while not reading."""
+        for code in self.info:
+            raw = bytearray(ABSINFO.size)
+            fcntl.ioctl(self.fd, ioc_read(0x40 + code, len(raw)), raw)
+            self.axes[code] = ABSINFO.unpack(raw)[0]
+        held = bytearray(KEY_BYTES)
+        fcntl.ioctl(self.fd, ioc_read(0x18, len(held)), held)
+        self.keys = {code for code in KEYS if has_bit(held, code)}
+
+    def _moved(self, code):
+        """Whether an axis is away from rest: the d-pad pressed, or a stick or
+        trigger at least MOVED of its way."""
+        if code in (ABS_HAT0X, ABS_HAT0Y):
+            return self.axes[code] != 0
+        if code in self.triggers.values():
+            return self._trigger(code, raw=True) >= MOVED
+        return abs(self._stick(code, raw=True)) >= MOVED
+
+    def in_use(self, data):
+        """Whether these events show someone using the controller."""
+        used = False
+        for offset in range(0, len(data) - INPUT_EVENT.size + 1, INPUT_EVENT.size):
+            _sec, _usec, kind, code, value = INPUT_EVENT.unpack_from(data, offset)
+            if kind == EV_KEY and value == 1:
+                used = True
+            elif kind == EV_ABS and code in self.axes:
+                self.axes[code] = value
+                used = used or self._moved(code)
+        return used
+
+    def held(self):
+        """Whether a button is held, or a stick or trigger is held away from rest."""
+        return bool(self.keys) or any(self._moved(code) for code in self.axes)
 
     def feed(self, data):
         for offset in range(0, len(data) - INPUT_EVENT.size + 1, INPUT_EVENT.size):
@@ -151,8 +199,52 @@ def main(path, raw=False):
                 print(json.dumps(state, separators=(',', ':')), flush=True)
 
 
+def drain(fd):
+    """Everything waiting to be read, without waiting for more."""
+    chunks = []
+    while True:
+        try:
+            data = os.read(fd, INPUT_EVENT.size * 64)
+        except BlockingIOError:
+            break
+        if not data:
+            break
+        chunks.append(data)
+    return b''.join(chunks)
+
+
+def watch(path):
+    """--activity: says when the controller is in use, and nothing else."""
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    controller = Controller(fd)
+
+    poller = select.poll()
+    poller.register(fd, select.POLLIN)
+    poller.register(sys.stdout.fileno(), 0)
+
+    reported = False
+    while True:
+        # Waits for input, but not right after a report: a button still held
+        # sends nothing new, and counts again now.
+        for ready, events in poller.poll(0 if reported else None):
+            if ready != fd or events & (select.POLLERR | select.POLLHUP):
+                return
+        used = controller.in_use(drain(fd))
+        controller.refresh()
+        reported = used or controller.held()
+        if reported:
+            print('{"input":true}', flush=True)
+            # Events pile up meanwhile and are looked at in one go.
+            time.sleep(ACTIVITY_EVERY)
+        else:
+            time.sleep(QUIET_REST)
+
+
 if __name__ == '__main__':
     try:
-        main(sys.argv[-1], raw='--raw' in sys.argv[1:-1])
+        if '--activity' in sys.argv[1:-1]:
+            watch(sys.argv[-1])
+        else:
+            main(sys.argv[-1], raw='--raw' in sys.argv[1:-1])
     except (OSError, KeyboardInterrupt):
         pass
