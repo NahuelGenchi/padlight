@@ -21,8 +21,10 @@ Track all meaningful work: features, bugs, enhancements, docs, research, release
 | M1 | M1 — Indicator and live view | The top-bar icon, the menu card and the live controller picture, plus defects and their fixes |
 | M2 | M2 — More controllers | Wider hardware support: other Xbox models and their pictures, Bluetooth and the Xbox Wireless Adapter tried on real hardware, other drivers |
 | M3 | M3 — Release | Packaging, the extensions.gnome.org listing, and versioned releases |
+| M4 | M4 — Settings and alerts | A settings window and what it controls: notifications, top-bar options, keeping the screen awake, nicknames and idle disconnect |
+| M5 | M5 — Controller tools | Tools in the menu for checking and managing a controller: sticks, triggers and buttons, vibration, finding it, the apps that use it, firmware and pairing |
 
-The first issue is #1 (M0). Later milestones may be created deliberately; assign them directly in GitHub.
+The first issue is #1 (M0). M4 and M5 were added later, in #16. A new milestone also goes into the workflow's milestone list and the issue form, so that both recognize it.
 
 ## Issue and PR conventions
 
@@ -47,6 +49,8 @@ Use one closing line per completed issue and `Refs #123` for unfinished parent o
 PRs inherit a missing milestone from their first valid closing issue. PRs without a valid closing issue, or with a milestone mismatch, get the `needs-tracking` label; fix the body or milestone to clear it. The workflow does not comment.
 
 The job uses inline Node.js and the repository's `GITHUB_TOKEN` with only issue and PR write permissions. It has no checkout, third-party action, build, or test. PR text is parsed as data, never executed. To repair metadata after a missed run, use **Actions → Project tracking → Run workflow**.
+
+Software checks run separately: [`.github/workflows/checks.yml`](../.github/workflows/checks.yml) runs `tests/run.sh` on every PR and every push to `main`, with read-only access to the repository. Its only action, `actions/checkout`, is pinned to a commit.
 
 ## Enforcement boundary
 

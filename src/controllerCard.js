@@ -10,12 +10,16 @@ import St from 'gi://St';
 import {formatTime} from 'resource:///org/gnome/shell/misc/dateUtils.js';
 
 import {batteryIcon, batteryIsLow, batteryText} from './battery.js';
-import {ControllerView} from './controllerView.js';
+import {ControllerCheck} from './controllerCheck.js';
+import {ControllerView, VIEW_HEIGHT} from './controllerView.js';
 
 const GAP = 8;
 const TILES = 4;
 // Picture height when several controllers share the menu
 const COMPACT_VIEW_HEIGHT = 186;
+
+// What the card's tabs show in the space for the picture
+const MODES = [['picture', 'Picture'], ['sticks', 'Sticks']];
 
 const CONNECTIONS = {
     usb: {label: 'Wired (USB)', icon: null},
@@ -83,13 +87,13 @@ function grid(children) {
     return box;
 }
 
-function batteryFact(controller, battery) {
+function batteryFact(controller, battery, lowBattery) {
     if (battery) {
         return {
             caption: 'Battery',
             value: batteryText(battery),
             icon: {icon_name: batteryIcon(battery)},
-            warning: batteryIsLow(battery),
+            warning: batteryIsLow(battery, lowBattery),
         };
     }
     // The kernel's USB driver for Xbox pads does not read the battery; on a
@@ -100,10 +104,10 @@ function batteryFact(controller, battery) {
 }
 
 // Everything worth telling about a controller, the most useful first
-function facts(controller, battery, usbIcon) {
+function facts(controller, battery, usbIcon, lowBattery) {
     const connection = CONNECTIONS[controller.connection];
     const list = [
-        batteryFact(controller, battery),
+        batteryFact(controller, battery, lowBattery),
         {
             caption: 'Connection',
             value: connection.label,
@@ -154,20 +158,25 @@ class Card extends St.BoxLayout {
     }
 });
 
-// One connected controller: live picture, the facts about it and its actions.
+// One connected controller: live picture or stick check, the facts about it
+// and its actions. Reads the controller only between start() and stop().
 export const ControllerCard = GObject.registerClass({
     Signals: {
         'rumble': {},
         'disconnect': {},
+        'mode-changed': {param_types: [GObject.TYPE_STRING]},
     },
 }, class ControllerCard extends Card {
     /**
      * @param {object} controller - an entry from scanControllers()
      * @param {object|null} battery - its entry from listBatteries(), if any
      * @param {object} assets - {images, logo, usbIcon, monitorScript}
-     * @param {boolean} compact - leave room for more cards
+     * @param {object} options
+     * @param {boolean} options.compact - leave room for more cards
+     * @param {number} options.lowBattery - the low battery level, in percent
+     * @param {string} options.mode - what the card shows first: picture or sticks
      */
-    _init(controller, battery, assets, compact = false) {
+    _init(controller, battery, assets, {compact, lowBattery, mode = 'picture'}) {
         super._init();
 
         const since = controller.since
@@ -175,19 +184,39 @@ export const ControllerCard = GObject.registerClass({
             : 'Connected';
         this.add_child(header(assets.logo, controller.name, since, true));
 
+        const height = compact ? COMPACT_VIEW_HEIGHT : VIEW_HEIGHT;
         this._view = new ControllerView(assets.images, {
             eventNode: controller.eventNode,
             monitorScript: assets.monitorScript,
-            height: compact ? COMPACT_VIEW_HEIGHT : null,
+            height,
+        });
+        this._check = new ControllerCheck({
+            eventNode: controller.eventNode,
+            monitorScript: assets.monitorScript,
+            height,
+            compact,
         });
         const hero = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'padlight-hero',
         });
         hero.add_child(this._view);
+        hero.add_child(this._check);
         this.add_child(hero);
 
-        const all = facts(controller, battery, assets.usbIcon);
+        const tabs = new St.BoxLayout({style_class: 'padlight-tabs', x_align: Clutter.ActorAlign.CENTER});
+        this._tabs = new Map(MODES.map(([name, label]) => {
+            const tab = new St.Button({label, style_class: 'padlight-tab', can_focus: true});
+            tab.connect('clicked', () => this._show(name));
+            tabs.add_child(tab);
+            return [name, tab];
+        }));
+        this.add_child(tabs);
+        this._open = false;
+        this._mode = null;
+        this._show(mode);
+
+        const all = facts(controller, battery, assets.usbIcon, lowBattery);
         this.add_child(grid(all.slice(0, TILES).map(tile)));
 
         const actions = [];
@@ -227,8 +256,34 @@ export const ControllerCard = GObject.registerClass({
         }
     }
 
-    get view() {
-        return this._view;
+    start() {
+        this._open = true;
+        this._shown().start();
+    }
+
+    stop() {
+        this._open = false;
+        this._view.stop();
+        this._check.stop();
+    }
+
+    _shown() {
+        return this._mode === 'sticks' ? this._check : this._view;
+    }
+
+    _show(mode) {
+        if (mode === this._mode)
+            return;
+        if (this._open)
+            this._shown().stop();
+        this._mode = mode;
+        this._view.visible = mode === 'picture';
+        this._check.visible = mode === 'sticks';
+        for (const [name, tab] of this._tabs)
+            tab.checked = name === mode;
+        if (this._open)
+            this._shown().start();
+        this.emit('mode-changed', mode);
     }
 
     /**

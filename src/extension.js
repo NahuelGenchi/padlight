@@ -67,14 +67,21 @@ class PadlightIndicator extends PanelMenu.Button {
         this._batteryRequest = 0;
         this._shown = null;
         this._scanId = 0;
-        this._views = [];
+        this._cards = [];
+        // What each controller's card shows, kept while the menu is rebuilt
+        this._modes = new Map();
         this._cardsByPath = new Map();
         // Programs that have each controller open, by controller
         this._users = new Map();
         this._usersRequest = 0;
-        this._extensionPath = extension.path;
+        this._extension = extension;
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
+
+        // The cards show the low battery level, so a new one redraws them.
+        this._settings = extension.getSettings();
+        this._settingsId = this._settings.connect('changed::low-battery-level',
+            () => this._sync());
 
         const icon = name => GLib.build_filenamev([extension.path, 'icons', name]);
         // What the cards in the menu are made of
@@ -103,17 +110,17 @@ class PadlightIndicator extends PanelMenu.Button {
                     this._scanLater();
             });
 
-        // The controller pictures are only live while the menu is showing.
+        // The cards only read the controllers while the menu is showing.
         this.menu.connect('open-state-changed', (_menu, open) => {
             if (open) {
                 this._scan();
                 this._findUsers();
             }
-            for (const view of this._views) {
+            for (const card of this._cards) {
                 if (open)
-                    view.start();
+                    card.start();
                 else
-                    view.stop();
+                    card.stop();
             }
         });
 
@@ -165,7 +172,7 @@ class PadlightIndicator extends PanelMenu.Button {
         let found;
         try {
             found = JSON.parse(await output(
-                ['python3', this._inuseScript, '--skip', this._extensionPath, ...nodes],
+                ['python3', this._inuseScript, '--skip', this._extension.path, ...nodes],
                 this._cancellable));
         } catch (e) {
             if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
@@ -190,20 +197,25 @@ class PadlightIndicator extends PanelMenu.Button {
         else
             this._icon.remove_style_class_name('padlight-active');
 
-        const shown = JSON.stringify(
-            this._controllers.map(c => [c, batteryFor(c, this._batteries)]));
+        const lowBattery = this._settings.get_int('low-battery-level');
+        const shown = JSON.stringify([lowBattery,
+            this._controllers.map(c => [c, batteryFor(c, this._batteries)])]);
         if (shown === this._shown)
             return;
         this._shown = shown;
-        this._buildMenu();
+        this._buildMenu(lowBattery);
     }
 
     // --- Menu ---
 
-    _buildMenu() {
+    _buildMenu(lowBattery) {
         this.menu.removeAll();
-        this._views = [];
+        this._cards = [];
         this._cardsByPath.clear();
+        for (const path of this._modes.keys()) {
+            if (!this._controllers.some(c => c.path === path))
+                this._modes.delete(path);
+        }
         for (const path of this._users.keys()) {
             if (!this._controllers.some(c => c.path === path))
                 this._users.delete(path);
@@ -217,7 +229,9 @@ class PadlightIndicator extends PanelMenu.Button {
         const compact = this._controllers.length > 1;
         for (const controller of this._controllers) {
             const card = new ControllerCard(controller,
-                batteryFor(controller, this._batteries), this._assets, compact);
+                batteryFor(controller, this._batteries), this._assets,
+                {compact, lowBattery, mode: this._modes.get(controller.path)});
+            card.connect('mode-changed', (_card, mode) => this._modes.set(controller.path, mode));
             card.connect('rumble',
                 () => spawn(['python3', this._rumbleScript, controller.eventNode]));
             card.connect('disconnect', () => {
@@ -230,14 +244,18 @@ class PadlightIndicator extends PanelMenu.Button {
             if (this._users.has(controller.path))
                 card.setUsers(this._users.get(controller.path));
 
-            this._views.push(card.view);
+            this._cards.push(card);
             if (this.menu.isOpen)
-                card.view.start();
+                card.start();
         }
 
-        const settings = new PopupMenu.PopupMenuItem('Bluetooth Settings');
-        settings.connect('activate', () => spawn(['gnome-control-center', 'bluetooth']));
-        this.menu.addMenuItem(settings);
+        const bluetooth = new PopupMenu.PopupMenuItem('Bluetooth Settings');
+        bluetooth.connect('activate', () => spawn(['gnome-control-center', 'bluetooth']));
+        this.menu.addMenuItem(bluetooth);
+
+        const preferences = new PopupMenu.PopupMenuItem('Padlight Settings');
+        preferences.connect('activate', () => this._extension.openPreferences());
+        this.menu.addMenuItem(preferences);
     }
 
     _addCard(card) {
@@ -260,7 +278,9 @@ class PadlightIndicator extends PanelMenu.Button {
         this._monitor = null;
         Gio.DBus.system.signal_unsubscribe(this._upowerId);
         this._upowerId = 0;
-        this._views = [];
+        this._settings.disconnect(this._settingsId);
+        this._settings = null;
+        this._cards = [];
         this._cardsByPath.clear();
         super.destroy();
     }
