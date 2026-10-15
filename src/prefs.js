@@ -68,6 +68,18 @@ export default class PadlightPreferences extends ExtensionPreferences {
             topBar.add(row);
         }
 
+        const screen = new Adw.PreferencesGroup({title: 'Screen'});
+        page.add(screen);
+
+        const keepAwake = new Adw.SwitchRow({
+            title: 'Keep the screen awake',
+            subtitle: 'Controller input counts as activity, as keyboard and mouse input does. ' +
+                'While this is on, Padlight reads connected controllers in the background',
+        });
+        window._settings.bind('keep-awake', keepAwake, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
+        screen.add(keepAwake);
+
         const nicknames = new Adw.PreferencesGroup({
             title: 'Nicknames',
             description: 'Give a controller a nickname with the pencil beside its name in the menu. ' +
