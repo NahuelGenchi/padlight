@@ -2,7 +2,7 @@
 
 ## The project
 
-Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus two small Python 3 helpers that read the controller and make it vibrate through evdev, standard library only. `README.md` describes the features.
+Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move; it can also pair a new controller over Bluetooth. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus two small Python 3 helpers that read the controller and make it vibrate through evdev, standard library only. `README.md` describes the features.
 
 It is an independent project, not affiliated with Microsoft. Xbox is a trademark of Microsoft.
 
@@ -16,6 +16,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
 | `src/battery.js` | Battery readings from UPower, matched to a controller |
+| `src/pairing.js` | Pair a Controller: searches, pairs, trusts and connects through BlueZ over D-Bus, and its menu section |
 | `src/controllerCard.js` | The menu card: header, live picture, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; runs `monitor.py` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
@@ -48,6 +49,7 @@ Never describe something as working or complete unless a recorded check establis
   where `my-check.sh` copies `src/` to `$XDG_DATA_HOME/gnome-shell/extensions/padlight@nahuelgenchi.github.io/`, starts `gnome-shell --headless --virtual-monitor 1920x1080 --unsafe-mode --no-x11 --wayland-display=padlight-test &`, waits until `Main.layoutManager._startingUp` is false, and drives it with `gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell --method org.gnome.Shell.Eval '<JavaScript>'`: for example `Main.extensionManager.enableExtension('padlight@nahuelgenchi.github.io')`, then `Main.panel.statusArea['padlight@nahuelgenchi.github.io'].menu.open()`. Pictures come from `org.gnome.Shell.Screenshot.Screenshot` on `/org/gnome/Shell/Screenshot`. A virtual controller created through `/dev/uinput` exercises detection and the live picture without real hardware; a virtual pointer or keyboard from `Clutter.get_default_backend().get_default_seat().create_virtual_device()` exercises hover, clicks and keyboard focus.
 - Before clicking or pressing keys in a test menu, set the test shell's `PATH` to a folder that does not exist (Eval `imports.gi.GLib.setenv('PATH', '/nonexistent', true)`), or Disconnect and Bluetooth Settings run the real `bluetoothctl` and Settings.
 - To check `install.sh` and what happens at the next log-in, also point `HOME` and `XDG_CACHE_HOME` at the scratch folder and use `GSETTINGS_BACKEND=keyfile` instead, which keeps settings between commands in `$XDG_CONFIG_HOME/glib-2.0/settings/keyfile`. Run `./install.sh` first, then start the hidden shell: it should load Padlight by itself.
+- Pair a Controller talks to BlueZ on the system bus, which a hidden shell shares with the real session. Before using it in a test menu, give the test shell a private system bus (`DBUS_SYSTEM_BUS_ADDRESS`), with a stand-in `org.bluez` on it to test pairing. Otherwise a search runs on the computer's real Bluetooth adapter, and choosing a controller pairs it.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
 - The helpers read input devices without grabbing them, so games keep working, and they only run while the menu is open. Keep both true.

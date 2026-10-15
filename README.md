@@ -143,8 +143,12 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>One card each, made smaller when there is more than one.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Pair a Controller</strong></td>
+    <td>Finds Xbox controllers that are waiting to pair, then pairs, trusts and connects the one you pick. Hold the pair button on top of the controller until the Xbox button flashes quickly. The search gives up after 30 seconds and stops when the menu closes.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Bluetooth Settings</strong></td>
-    <td>Opens the Bluetooth page of Settings, to pair a new controller.</td>
+    <td>Opens the Bluetooth page of Settings, for other devices or when pairing from the menu does not work.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Your theme</strong></td>
@@ -198,6 +202,7 @@ Padlight recognizes a controller by Microsoft's vendor ID, by an Xbox name, or b
 flowchart TB
     kernel["<b>Linux</b><br/>/dev/input, sysfs"]
     upower["<b>UPower</b><br/>battery readings"]
+    bluez["<b>BlueZ</b><br/>search, pairing"]
     subgraph shell["GNOME Shell"]
         ext["<b>extension.js</b><br/>icon and menu"]
         card["<b>controllerCard.js</b><br/>card, live picture"]
@@ -208,22 +213,24 @@ flowchart TB
     end
     kernel --> shell
     upower --> shell
+    bluez --> shell
     ext --> card
     kernel --> monitor
     monitor -->|"while the menu is open"| card
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture; when the menu closes, the helper stops.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower. Pair a Controller asks BlueZ, the system's Bluetooth service, to search and pair over D-Bus. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture; when the menu closes, the helper stops.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
-- **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going and for battery changes.
+- **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going and for battery changes, and finishes a pairing already under way.
 
 | Path | What is in it |
 | :--- | :--- |
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device |
 | `src/battery.js` | Battery readings from UPower |
+| `src/pairing.js` | Pair a Controller: the search and pairing through BlueZ, and its part of the menu |
 | `src/controllerCard.js` | The card: header, picture, tiles, buttons, and the empty state |
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
 | `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a short vibration |

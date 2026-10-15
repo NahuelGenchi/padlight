@@ -15,6 +15,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {batteryFor, listBatteries} from './battery.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {Pairing, PairingSection} from './pairing.js';
 
 const DIMMED = 110;
 
@@ -40,6 +41,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._scanId = 0;
         this._views = [];
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
+        this._pairing = new Pairing();
 
         const icon = name => GLib.build_filenamev([extension.path, 'icons', name]);
         // What the cards in the menu are made of
@@ -78,6 +80,8 @@ class PadlightIndicator extends PanelMenu.Button {
                 else
                     view.stop();
             }
+            if (!open)
+                this._pairing.menuClosed();
         });
 
         this._scan();
@@ -162,6 +166,7 @@ class PadlightIndicator extends PanelMenu.Button {
                 card.view.start();
         }
 
+        this.menu.addMenuItem(new PairingSection(this._pairing));
         const settings = new PopupMenu.PopupMenuItem('Bluetooth Settings');
         settings.connect('activate', () => spawn(['gnome-control-center', 'bluetooth']));
         this.menu.addMenuItem(settings);
@@ -188,6 +193,7 @@ class PadlightIndicator extends PanelMenu.Button {
         Gio.DBus.system.signal_unsubscribe(this._upowerId);
         this._upowerId = 0;
         this._views = [];
+        this._pairing.destroy();
         super.destroy();
     }
 });
