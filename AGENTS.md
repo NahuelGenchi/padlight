@@ -15,7 +15,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/metadata.json` | Extension ID (`padlight@nahuelgenchi.github.io`), name, supported GNOME Shell versions |
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
-| `src/battery.js` | Battery readings from UPower, matched to a controller |
+| `src/battery.js` | Battery readings from UPower, matched to a controller, and the lowest one for the top bar |
 | `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
 | `src/controllerCard.js` | The menu card: header, live picture or stick check and their tabs, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |

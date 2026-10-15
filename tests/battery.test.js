@@ -3,7 +3,7 @@
 
 // The battery helpers, on made-up UPower readings. Run: gjs -m tests/battery.test.js
 
-import {batteryFor, batteryIcon, batteryIsLow, batteryText} from '../src/battery.js';
+import {batteryCharge, batteryFor, batteryIcon, batteryIsLow, batteryText, lowestBattery} from '../src/battery.js';
 import {done, equal, test} from './harness.js';
 
 // UPower's State and BatteryLevel values
@@ -60,6 +60,35 @@ test('battery icons in steps of ten', () => {
     equal(batteryIcon(reading(75)), 'battery-level-80-symbolic', '75%');
     equal(batteryIcon(reading(42, CHARGING)), 'battery-level-40-charging-symbolic', 'charging');
     equal(batteryIcon(reading(100, FULLY_CHARGED)), 'battery-level-100-charged-symbolic', 'charged');
+});
+
+test('the charge alone, for the top bar', () => {
+    equal(batteryCharge(reading(45.4)), '45%', 'a percentage');
+    equal(batteryCharge(reading(45, CHARGING)), '45%', 'charging');
+    equal(batteryCharge(reading(0, DISCHARGING, LOW)), 'Low', 'a coarse level');
+});
+
+test('the top bar shows the lowest charge', () => {
+    const [a, b, c] = [reading(60), reading(15), reading(35)];
+    equal(lowestBattery([a, b, c]), b, 'three controllers');
+    equal(lowestBattery([a, null, c]), c, 'one without a reading');
+    equal(lowestBattery([null, null]), null, 'no readings');
+    equal(lowestBattery([]), null, 'no controllers');
+});
+
+test('a battery already charging comes after the others', () => {
+    const charging = reading(10, CHARGING);
+    const charged = reading(100, FULLY_CHARGED);
+    equal(lowestBattery([charging, reading(60)]), reading(60), 'the other needs charging first');
+    equal(lowestBattery([charging, charged]), charging, 'all on the charger: the lowest');
+});
+
+test('coarse levels compare with percentages', () => {
+    const low = reading(0, DISCHARGING, LOW);
+    const normal = reading(0, DISCHARGING, NORMAL);
+    equal(lowestBattery([reading(30), low]), low, 'Low is below 30%');
+    equal(lowestBattery([reading(30), normal]), reading(30), 'Normal is above 30%');
+    equal(lowestBattery([reading(4), reading(0, DISCHARGING, CRITICAL)]), reading(4), '4% is below Critical');
 });
 
 done();

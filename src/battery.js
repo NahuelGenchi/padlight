@@ -85,3 +85,27 @@ export function batteryIcon(battery) {
         return `battery-level-${level}-charging-symbolic`;
     return `battery-level-${level}-symbolic`;
 }
+
+// The charge alone, as the top bar shows it: "45%", or the level's name for a
+// driver that only reports a coarse level
+export function batteryCharge(battery) {
+    return LEVEL_LABELS[battery.level] ?? `${Math.round(battery.percentage)}%`;
+}
+
+// About where each coarse level sits, to compare it with a percentage
+const LEVEL_PERCENTAGES = {3: 10, 4: 5, 6: 55, 7: 80, 8: 100};
+
+/**
+ * The reading to show for several controllers: the lowest charge, as that
+ * controller needs charging first. One already charging only counts when
+ * every one is.
+ *
+ * @param {Array<object|null>} batteries - a reading per controller, or null
+ * @returns {object|null}
+ */
+export function lowestBattery(batteries) {
+    const charging = b => b.state === STATE_CHARGING || b.state === STATE_FULLY_CHARGED;
+    const charge = b => LEVEL_PERCENTAGES[b.level] ?? b.percentage;
+    return batteries.filter(Boolean)
+        .sort((a, b) => charging(a) - charging(b) || charge(a) - charge(b))[0] ?? null;
+}
