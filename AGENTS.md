@@ -17,6 +17,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
 | `src/battery.js` | Battery readings from UPower, matched to a controller, and how low they are |
 | `src/batteryAlerts.js` | When a low battery alert is due and what it says; the extension keeps it while the screen is locked, so unlocking repeats nothing |
+| `src/connectionNotices.js` | Which controllers came and went between two scans, how a controller is told apart across reconnects, and what a connection notice says |
 | `src/notifications.js` | Padlight's source in the message tray; a notification replaces the last one sent with the same key |
 | `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
 | `src/controllerCard.js` | The menu card: header, live picture, stick check, button checklist or vibration lab and their tabs, information tiles, buttons, and the empty state |
@@ -35,7 +36,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
-| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers and alerts, the firmware table, the button checklist, and the Python helpers with fake devices and a made-up `/proc` |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers and alerts, the connection notices, the firmware table, the button checklist, and the Python helpers with fake devices and a made-up `/proc` |
 | `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 

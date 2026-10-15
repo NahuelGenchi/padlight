@@ -128,6 +128,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>Wired (USB), Bluetooth or the Xbox Wireless Adapter, and the time the controller connected.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Connection notices</strong></td>
+    <td>A short notification when a controller connects, such as <em>Xbox Wireless Controller connected</em> with <em>Bluetooth · 70%</em> underneath, and one when it leaves, wired, over Bluetooth or through the adapter. Controllers already connected when Padlight starts get none. A controller's newest notice replaces the one before, so a quick reconnect leaves one, and a notice leaves the notification list once it has been seen. It shows even over a full-screen game, and can be switched off in Padlight Settings.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Model and firmware</strong></td>
     <td>The model number on the controller's label, such as 1914 for the Series X|S controller, and the firmware version it reports. The driver and the device file are listed underneath. When a controller on Bluetooth runs older firmware than the newest Padlight knows of, the firmware icon turns orange and a line points to the Xbox Accessories app on Windows or an Xbox console, since Linux has no updater for it. That list of versions ships with Padlight, so it can fall behind until the next release, and firmware is not compared over USB yet.</td>
   </tr>
@@ -169,7 +173,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Padlight Settings</strong></td>
-    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, and the switch for the low battery alerts.</td>
+    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, and the switches for the low battery alerts and for connection notices.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Your theme</strong></td>
@@ -242,7 +246,7 @@ flowchart TB
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower, and one that reaches the low level sends a notification. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower, and one that reaches the low level sends a notification. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
 - **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going and for battery changes.
@@ -253,6 +257,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device |
 | `src/battery.js` | Battery readings from UPower |
 | `src/batteryAlerts.js` | When a low battery alert is due, and what it says |
+| `src/connectionNotices.js` | Which controllers came and went, and what a connection notice says |
 | `src/notifications.js` | Padlight's notifications in the message tray |
 | `src/firmware.js` | The newest firmware known for each controller, for the update hint |
 | `src/controllerCard.js` | The card: header, the picture, the stick check, the button checklist or the vibration lab and their tabs, tiles, buttons, and the empty state |
@@ -267,7 +272,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |
 | `install.sh` | Install, update, pack or remove |
-| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and alerts, and the helpers, on made-up data |
+| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and alerts, connection notices and the helpers, on made-up data |
 
 ## Roadmap
 
@@ -277,7 +282,7 @@ Padlight is young. What is on this page works today. Next on the list:
 - **The xpadneo driver and the Xbox Wireless Adapter**, tried on real hardware ([#13](https://github.com/NahuelGenchi/padlight/issues/13), [#14](https://github.com/NahuelGenchi/padlight/issues/14)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
-- **Settings and alerts**, with notifications for controllers coming and going, top-bar options, keeping the screen awake, nicknames, and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
+- **Settings and alerts**, with top-bar options, keeping the screen awake, nicknames, and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
 - **Controller tools**, such as a stick and trigger check, a button checklist, a vibration lab and Find my controller ([M5](https://github.com/NahuelGenchi/padlight/milestone/6)).
 - **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
 

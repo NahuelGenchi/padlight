@@ -16,5 +16,10 @@ SPDX-License-Identifier: GPL-2.0-or-later
       <summary>Low battery alerts</summary>
       <description>Whether to send a notification when a controller's battery reaches the low level, and again at 10%.</description>
     </key>
+    <key name="connection-notices" type="b">
+      <default>true</default>
+      <summary>Connection notices</summary>
+      <description>Whether to send a notification when a controller connects or disconnects.</description>
+    </key>
   </schema>
 </schemalist>
