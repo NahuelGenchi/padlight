@@ -160,6 +160,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>A short rumble to check the motors, on controllers that can vibrate.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Find Controller</strong></td>
+    <td>On a wireless controller that can vibrate: ten short, strong buzzes over six seconds, to find it under a cushion by feel or sound. The button reads <em>Stop Finding</em> meanwhile, and stops it at once. It carries on with the menu closed, and stops if the controller disconnects.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Vibration lab</strong></td>
     <td>The <em>Vibration</em> tab, on controllers that can vibrate: how hard the strong motor on the left and the weak motor on the right run, from 0 to 100%, and for how long, from 0.1 to 2 seconds, then Play. The settings stay while the controller is connected. Linux drives only these two motors; the motors in the triggers are not part of it.</td>
   </tr>
@@ -187,7 +191,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
 
 ## Get started
 
-You need **GNOME Shell 50**; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test and the <em>In use by</em> line.
+You need **GNOME Shell 50**; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test, Find Controller and the <em>In use by</em> line.
 
 ```sh
 git clone https://github.com/NahuelGenchi/padlight.git
@@ -269,7 +273,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/controllerCheck.js` | The stick check: the sticks before any dead zone, the triggers, where the sticks rest |
 | `src/buttonCheck.js`, `src/checklist.js` | The button checklist: the picture with every pressed button lit, and the count |
 | `src/inputMonitor.js` | Runs `monitor.py` for a card while the menu is open |
-| `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a vibration of a set strength and length |
+| `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a vibration of a set strength and length, or Find Controller's bursts |
 | `src/vibrationLab.js` | The vibration lab: the two motors' strengths, the length and Play |
 | `src/inuse.py` | The helper that finds which programs have a controller open |
 | `src/stylesheet.css` | The card's look on dark and light menus |
@@ -287,7 +291,7 @@ Padlight is young. What is on this page works today. Next on the list:
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
 - **Settings and alerts**, such as keeping the screen awake, nicknames, and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
-- **Controller tools**, such as a stick and trigger check, a button checklist, a vibration lab and Find my controller ([M5](https://github.com/NahuelGenchi/padlight/milestone/6)).
+- **Controller tools**, such as pairing a controller from the menu ([M5](https://github.com/NahuelGenchi/padlight/milestone/6)).
 - **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
 
 | Milestone | Outcome |

@@ -28,7 +28,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/checklist.js` | The button checklist's bookkeeping: which buttons a controller has (from its modalias), which have been pressed |
 | `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
 | `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
-| `src/rumble.py` | Plays a vibration: Test Vibration's short buzz, or the strengths and length from the vibration lab, within its limits |
+| `src/rumble.py` | Plays a vibration: Test Vibration's short buzz, or the strengths and length from the vibration lab, within its limits; `--find` plays Find Controller's bursts. Stopping it stops the controller, as closing the device removes the effect |
 | `src/vibrationLab.js` | The Vibration tab: a slider for each motor and the length, and Play |
 | `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
 | `src/stylesheet.css` | The card's look on dark and light menus |
