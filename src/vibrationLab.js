@@ -8,6 +8,8 @@ import St from 'gi://St';
 
 import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
 
+import {VERTICAL} from './shellVersions.js';
+
 // The same limits as rumble.py's, in the steps the sliders move in
 const STRENGTH_STEP = 5;
 const MIN_LENGTH_MS = 100;
@@ -36,7 +38,7 @@ class VibrationLab extends St.BoxLayout {
      */
     _init({values, onPlay, height, compact}) {
         super._init({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: compact ? 'padlight-lab padlight-lab-compact' : 'padlight-lab',
             height,
             x_expand: true,
@@ -44,7 +46,7 @@ class VibrationLab extends St.BoxLayout {
         this._values = values;
         // Centred in the space the picture takes on the other tabs
         this._content = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: 'padlight-lab-content',
             x_expand: true,
             y_expand: true,
@@ -84,7 +86,7 @@ class VibrationLab extends St.BoxLayout {
     // A caption with the value on its right, and a slider under them
     _row(caption, start, update) {
         const group = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: 'padlight-lab-group',
             x_expand: true,
         });

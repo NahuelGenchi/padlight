@@ -108,3 +108,8 @@
 .padlight-button:focus,
 .padlight-tab:focus,
 .padlight-chip:focus { box-shadow: inset 0 0 0 2px -st-accent-color; }
+
+/* GNOME Shell 46 has no accent colour, so GNOME's blue */
+.padlight-no-accent .padlight-button:focus,
+.padlight-no-accent .padlight-tab:focus,
+.padlight-no-accent .padlight-chip:focus { box-shadow: inset 0 0 0 2px #3584e4; }

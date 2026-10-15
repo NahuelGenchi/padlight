@@ -2,7 +2,7 @@
 
 ## The project
 
-Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus small Python 3 helpers, standard library only: two read the controller and make it vibrate through evdev, and one lists the programs that have it open. `README.md` describes the features.
+Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 46 to 50 with no build step, plus small Python 3 helpers, standard library only: two read the controller and make it vibrate through evdev, and one lists the programs that have it open. `README.md` describes the features.
 
 It is an independent project, not affiliated with Microsoft. Xbox is a trademark of Microsoft.
 
@@ -32,6 +32,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/vibrationLab.js` | The Vibration tab: a slider for each motor and the length, and Play |
 | `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
 | `src/stylesheet.css` | The card's look on dark and light menus |
+| `src/shellVersions.js` | What differs between the GNOME Shell versions Padlight runs on, found by feature: how a box stacks its children, and whether focus rings can take the accent colour |
 | `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
@@ -67,6 +68,12 @@ Never describe something as working or complete unless a recorded check establis
 - A notification banner in the hidden shell stays up until there is input, as GNOME keeps banners for an idle user, and later ones wait behind it. Clear them between checks, for example by destroying the notifications of each source in `Main.messageTray.getSources()`.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
+- Padlight runs on GNOME Shell 46 to 50, as `src/metadata.json` lists. Write for 50, and keep what differs in `src/shellVersions.js`, found by feature rather than by version number. What to watch for:
+  - `St.BoxLayout` has `orientation` only from 48; use `VERTICAL`. The stylesheet's `-st-accent-color` reads as black on 46.
+  - libadwaita is 1.5 on 46, so newer widgets and properties need a check, such as `Adw.EntryRow`'s `max-length` from 1.6.
+  - gjs is 1.80 on 46, without `Object.groupBy`, `Promise.withResolvers`, the new `Set` methods or `Intl.Segmenter`, and before 1.86 (GNOME 49) there are no iterator helpers or `Promise.try`.
+  - On 46, gjs logs once that `Gio.UnixInputStream` has moved, when the live picture first reads its helper. GNOME Shell 46 does the same for any subprocess pipe, so it is not a fault in Padlight.
+  - Check a change on the older versions in the same kind of hidden shell, inside a container of a release that has that version (Ubuntu 24.04, Ubuntu 24.10, Debian 13, Ubuntu 25.10), with no network. Make the virtual controller outside the container and let the container open only its device nodes.
 - When a newer controller firmware line appears, update `src/firmware.js` with a source, such as a kernel log of a controller running it. Only list versions that were seen, so a current controller is never called out of date.
 - The helpers read input devices without grabbing them, so games keep working, and they only run while the menu is open. Keep both true.
 - Record what a check covered and what it did not, in the PR: hidden shell or real session, simulated or real controller, which connection.
