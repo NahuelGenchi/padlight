@@ -116,6 +116,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>The icon in the top bar is green while a controller is connected and dimmed while none is.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Top-bar options</strong></td>
+    <td>Two switches in Padlight Settings, both off at first. One puts the battery level beside the icon: with several controllers, the lowest charge, as that controller needs charging first, in orange when it is low. The other hides the icon while no controller is connected, until one connects. While the icon is hidden its menu cannot be opened; Padlight Settings stays in the Extensions app.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Battery</strong></td>
     <td>The charge, and whether it is charging, for controllers whose driver reports it to UPower. On a cable it reads <em>On USB power</em>. At 20% and below, the battery icon turns orange; the level can be changed in Padlight Settings.</td>
   </tr>
@@ -173,7 +177,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Padlight Settings</strong></td>
-    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, and the switches for the low battery alerts and for connection notices.</td>
+    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, the switches for the low battery alerts and for connection notices, and the top-bar options.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Your theme</strong></td>
@@ -282,7 +286,7 @@ Padlight is young. What is on this page works today. Next on the list:
 - **The xpadneo driver and the Xbox Wireless Adapter**, tried on real hardware ([#13](https://github.com/NahuelGenchi/padlight/issues/13), [#14](https://github.com/NahuelGenchi/padlight/issues/14)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
-- **Settings and alerts**, with top-bar options, keeping the screen awake, nicknames, and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
+- **Settings and alerts**, such as keeping the screen awake, nicknames, and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
 - **Controller tools**, such as a stick and trigger check, a button checklist, a vibration lab and Find my controller ([M5](https://github.com/NahuelGenchi/padlight/milestone/6)).
 - **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
 

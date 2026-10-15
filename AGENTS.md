@@ -15,7 +15,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/metadata.json` | Extension ID (`padlight@nahuelgenchi.github.io`), name, supported GNOME Shell versions |
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
-| `src/battery.js` | Battery readings from UPower, matched to a controller, and how low they are |
+| `src/battery.js` | Battery readings from UPower, matched to a controller, how low they are, and the lowest one for the top bar |
 | `src/batteryAlerts.js` | When a low battery alert is due and what it says; the extension keeps it while the screen is locked, so unlocking repeats nothing |
 | `src/connectionNotices.js` | Which controllers came and went between two scans, how a controller is told apart across reconnects, and what a connection notice says |
 | `src/notifications.js` | Padlight's source in the message tray; a notification replaces the last one sent with the same key |

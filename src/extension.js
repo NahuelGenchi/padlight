@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import Cairo from 'cairo';
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
@@ -14,7 +15,7 @@ import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import {batteryFor, batteryIcon, listBatteries} from './battery.js';
+import {batteryCharge, batteryFor, batteryIcon, batteryIsLow, listBatteries, lowestBattery} from './battery.js';
 import {alertText, BatteryAlerts} from './batteryAlerts.js';
 import {Checklist} from './checklist.js';
 import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
@@ -64,6 +65,22 @@ function programName({pid, name, app}) {
 
 const deviceNodes = c => [c.eventNode, c.jsNode, ...c.hidrawNodes].filter(Boolean);
 
+// The icon and the battery level in the top bar. Like the card, it tells the
+// stylesheet whether the bar is dark or light, for the low battery colour.
+const TopBarBox = GObject.registerClass(
+class TopBarBox extends St.BoxLayout {
+    vfunc_style_changed() {
+        super.vfunc_style_changed();
+        const {red, green, blue} = this.get_theme_node().get_foreground_color();
+        const onDark = 0.299 * red + 0.587 * green + 0.114 * blue > 127;
+        if (onDark === this._onDark)
+            return;
+        this._onDark = onDark;
+        this.remove_style_class_name(onDark ? 'padlight-on-light' : 'padlight-on-dark');
+        this.add_style_class_name(onDark ? 'padlight-on-dark' : 'padlight-on-light');
+    }
+});
+
 const PadlightIndicator = GObject.registerClass(
 class PadlightIndicator extends PanelMenu.Button {
     _init(extension, batteryAlerts) {
@@ -93,7 +110,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
 
-        // A setting changes what the menu shows or which alerts are due.
+        // A setting changes what the menu or the top bar shows, or which alerts are due.
         this._settings = extension.getSettings();
         this._settingsId = this._settings.connect('changed', () => this._sync());
         this._batteryAlerts = batteryAlerts;
@@ -111,7 +128,15 @@ class PadlightIndicator extends PanelMenu.Button {
         };
 
         this._icon = new St.Icon({gicon: this._assets.logo, style_class: 'system-status-icon'});
-        this.add_child(this._icon);
+        this._level = new St.Label({
+            style_class: 'padlight-level',
+            y_align: Clutter.ActorAlign.CENTER,
+            visible: false,
+        });
+        const box = new TopBarBox({style_class: 'panel-status-menu-box'});
+        box.add_child(this._icon);
+        box.add_child(this._level);
+        this.add_child(box);
         this._notifier = new Notifier(this._assets.logo);
 
         // A controller shows up as new nodes in /dev/input, wired or not.
@@ -131,6 +156,8 @@ class PadlightIndicator extends PanelMenu.Button {
             if (open) {
                 this._scan();
                 this._findUsers();
+            } else {
+                this._syncTopBar();
             }
             for (const card of this._cards) {
                 if (open)
@@ -277,6 +304,7 @@ class PadlightIndicator extends PanelMenu.Button {
         else
             this._icon.remove_style_class_name('padlight-active');
 
+        this._syncTopBar();
         const lowBattery = this._settings.get_int('low-battery-level');
         this._alertBatteries(lowBattery);
         const shown = JSON.stringify([lowBattery,
@@ -285,6 +313,25 @@ class PadlightIndicator extends PanelMenu.Button {
             return;
         this._shown = shown;
         this._buildMenu(lowBattery);
+    }
+
+    // The options from the settings window: the lowest charge beside the
+    // icon, and no icon while no controller is connected.
+    _syncTopBar() {
+        const battery = this._settings.get_boolean('show-battery-level')
+            ? lowestBattery(this._controllers.map(c => batteryFor(c, this._batteries)))
+            : null;
+        this._level.visible = Boolean(battery);
+        if (battery) {
+            this._level.text = batteryCharge(battery);
+            if (batteryIsLow(battery, this._settings.get_int('low-battery-level')))
+                this._level.add_style_class_name('padlight-warning');
+            else
+                this._level.remove_style_class_name('padlight-warning');
+        }
+        // An open menu stays in place until it closes.
+        this.visible = this._controllers.length > 0 || this.menu.isOpen ||
+            !this._settings.get_boolean('hide-when-disconnected');
     }
 
     // Sends the low battery alerts that are due.

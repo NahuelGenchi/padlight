@@ -4,6 +4,9 @@
 /* Panel icon while a controller is connected */
 .padlight-active { color: #107c10; }
 
+/* The battery level beside it; orange when low, as on the card */
+.padlight-level { font-feature-settings: "tnum"; }
+
 /* --- Menu card: layout --- */
 
 .padlight-card-item { padding: 8px; }

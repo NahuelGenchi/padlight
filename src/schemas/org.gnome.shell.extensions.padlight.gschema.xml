@@ -21,5 +21,15 @@ SPDX-License-Identifier: GPL-2.0-or-later
       <summary>Connection notices</summary>
       <description>Whether to send a notification when a controller connects or disconnects.</description>
     </key>
+    <key name="show-battery-level" type="b">
+      <default>false</default>
+      <summary>Battery level in the top bar</summary>
+      <description>Whether to show the battery level beside the top-bar icon. With several controllers, the lowest charge is shown.</description>
+    </key>
+    <key name="hide-when-disconnected" type="b">
+      <default>false</default>
+      <summary>Hide the icon without a controller</summary>
+      <description>Whether to hide the top-bar icon while no controller is connected. It comes back as soon as one connects.</description>
+    </key>
   </schema>
 </schemalist>

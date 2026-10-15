@@ -50,5 +50,19 @@ export default class PadlightPreferences extends ExtensionPreferences {
         window._settings.bind('connection-notices', notices, 'active',
             Gio.SettingsBindFlags.DEFAULT);
         connections.add(notices);
+
+        const topBar = new Adw.PreferencesGroup({title: 'Top bar'});
+        page.add(topBar);
+
+        for (const [key, title, subtitle] of [
+            ['show-battery-level', 'Battery level beside the icon',
+                'With several controllers, the lowest charge'],
+            ['hide-when-disconnected', 'Hide the icon without a controller',
+                'It comes back as soon as one connects'],
+        ]) {
+            const row = new Adw.SwitchRow({title, subtitle});
+            window._settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
+            topBar.add(row);
+        }
     }
 }
