@@ -10,6 +10,7 @@ import St from 'gi://St';
 import {formatTime} from 'resource:///org/gnome/shell/misc/dateUtils.js';
 
 import {batteryIcon, batteryIsLow, batteryText} from './battery.js';
+import {ButtonCheck} from './buttonCheck.js';
 import {ControllerCheck} from './controllerCheck.js';
 import {ControllerView, VIEW_HEIGHT} from './controllerView.js';
 
@@ -19,7 +20,7 @@ const TILES = 4;
 const COMPACT_VIEW_HEIGHT = 186;
 
 // What the card's tabs show in the space for the picture
-const MODES = [['picture', 'Picture'], ['sticks', 'Sticks']];
+const MODES = [['picture', 'Picture'], ['sticks', 'Sticks'], ['buttons', 'Buttons']];
 
 const CONNECTIONS = {
     usb: {label: 'Wired (USB)', icon: null},
@@ -159,8 +160,9 @@ class Card extends St.BoxLayout {
     }
 });
 
-// One connected controller: live picture or stick check, the facts about it
-// and its actions. Reads the controller only between start() and stop().
+// One connected controller: live picture, stick check or button checklist,
+// the facts about it and its actions. Reads the controller only between
+// start() and stop().
 export const ControllerCard = GObject.registerClass({
     Signals: {
         'rumble': {},
@@ -175,9 +177,10 @@ export const ControllerCard = GObject.registerClass({
      * @param {object} options
      * @param {boolean} options.compact - leave room for more cards
      * @param {number} options.lowBattery - the low battery level, in percent
-     * @param {string} options.mode - what the card shows first: picture or sticks
+     * @param {string} options.mode - what the card shows first: picture, sticks or buttons
+     * @param {object} options.checklist - the controller's Checklist, kept by the menu
      */
-    _init(controller, battery, assets, {compact, lowBattery, mode = 'picture'}) {
+    _init(controller, battery, assets, {compact, lowBattery, mode = 'picture', checklist = null}) {
         super._init();
 
         const since = controller.since
@@ -197,16 +200,26 @@ export const ControllerCard = GObject.registerClass({
             height,
             compact,
         });
+        // What each tab shows
+        this._panes = new Map([['picture', this._view], ['sticks', this._check]]);
+        if (checklist?.total) {
+            this._panes.set('buttons', new ButtonCheck(assets.images, {
+                eventNode: controller.eventNode,
+                monitorScript: assets.monitorScript,
+                checklist,
+                height,
+            }));
+        }
         const hero = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'padlight-hero',
         });
-        hero.add_child(this._view);
-        hero.add_child(this._check);
+        for (const pane of this._panes.values())
+            hero.add_child(pane);
         this.add_child(hero);
 
         const tabs = new St.BoxLayout({style_class: 'padlight-tabs', x_align: Clutter.ActorAlign.CENTER});
-        this._tabs = new Map(MODES.map(([name, label]) => {
+        this._tabs = new Map(MODES.filter(([name]) => this._panes.has(name)).map(([name, label]) => {
             const tab = new St.Button({label, style_class: 'padlight-tab', can_focus: true});
             tab.connect('clicked', () => this._show(name));
             tabs.add_child(tab);
@@ -215,7 +228,7 @@ export const ControllerCard = GObject.registerClass({
         this.add_child(tabs);
         this._open = false;
         this._mode = null;
-        this._show(mode);
+        this._show(this._panes.has(mode) ? mode : 'picture');
 
         const all = facts(controller, battery, assets.usbIcon, lowBattery);
         this.add_child(grid(all.slice(0, TILES).map(tile)));
@@ -277,12 +290,12 @@ export const ControllerCard = GObject.registerClass({
 
     stop() {
         this._open = false;
-        this._view.stop();
-        this._check.stop();
+        for (const pane of this._panes.values())
+            pane.stop();
     }
 
     _shown() {
-        return this._mode === 'sticks' ? this._check : this._view;
+        return this._panes.get(this._mode);
     }
 
     _show(mode) {
@@ -291,8 +304,8 @@ export const ControllerCard = GObject.registerClass({
         if (this._open)
             this._shown().stop();
         this._mode = mode;
-        this._view.visible = mode === 'picture';
-        this._check.visible = mode === 'sticks';
+        for (const [name, pane] of this._panes)
+            pane.visible = name === mode;
         for (const [name, tab] of this._tabs)
             tab.checked = name === mode;
         if (this._open)

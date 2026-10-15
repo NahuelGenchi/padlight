@@ -17,10 +17,12 @@ Never describe something as working or complete unless a recorded check establis
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
 | `src/battery.js` | Battery readings from UPower, matched to a controller |
 | `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
-| `src/controllerCard.js` | The menu card: header, live picture or stick check and their tabs, information tiles, buttons, and the empty state |
+| `src/controllerCard.js` | The menu card: header, live picture, stick check or button checklist and their tabs, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
 | `src/controllerCheck.js` | The stick check: raw stick positions, the triggers, where each stick rests |
+| `src/buttonCheck.js` | The Buttons tab: the picture with the checklist's buttons lit, the count and Reset |
+| `src/checklist.js` | The button checklist's bookkeeping: which buttons a controller has (from its modalias), which have been pressed |
 | `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
 | `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
 | `src/rumble.py` | Plays a short vibration |
@@ -30,7 +32,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
-| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, the firmware table, and the Python helpers with fake devices and a made-up `/proc` |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, the firmware table, the button checklist, and the Python helpers with fake devices and a made-up `/proc` |
 | `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 
