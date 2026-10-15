@@ -27,8 +27,11 @@ class ControllerView extends St.DrawingArea {
      * @param {string} [params.eventNode] - controller to mirror; a placeholder without
      * @param {string} [params.monitorScript] - program that reports its inputs
      * @param {number} [params.height] - the picture takes all the width it gets
+     * @param {object} [params.checklist] - a Checklist to fill in, whose buttons stay lit
+     * @param {Function} [params.onChecked] - called when the checklist gets a new button
      */
-    _init(images, {eventNode = null, monitorScript = null, height = null} = {}) {
+    _init(images, {eventNode = null, monitorScript = null, height = null,
+        checklist = null, onChecked = null} = {}) {
         super._init({
             height: height ?? (eventNode ? VIEW_HEIGHT : PLACEHOLDER_HEIGHT),
             x_expand: true,
@@ -36,9 +39,12 @@ class ControllerView extends St.DrawingArea {
 
         this._images = images;
         this._state = IDLE;
+        this._checklist = checklist;
         this._monitor = eventNode
             ? new InputMonitor(['python3', monitorScript, eventNode], state => {
                 this._state = state;
+                if (checklist?.feed(state))
+                    onChecked?.();
                 this.queue_repaint();
             })
             : null;
@@ -52,7 +58,7 @@ class ControllerView extends St.DrawingArea {
         const {red, green, blue} = this.get_theme_node().get_foreground_color();
         const foreground = [red / 255, green / 255, blue / 255];
         if (this._monitor)
-            drawController(cr, width, height, this._images, this._state, foreground);
+            drawController(cr, width, height, this._images, this._state, foreground, this._checklist?.seen);
         else
             drawPlaceholder(cr, width, height, this._images.art, foreground);
         cr.$dispose();

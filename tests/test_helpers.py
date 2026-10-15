@@ -122,7 +122,9 @@ class RumbleTest(unittest.TestCase):
     def test_ioctl_number(self):
         self.assertEqual(rumble.EVIOCSFF, 0x40304580)
 
-    def test_plays_one_rumble_and_closes(self):
+    def play(self, call):
+        """Runs call() with the device faked; returns the effect sent, its id
+        written back, and the write and close mocks."""
         sent = {}
 
         def ioctl(_fd, request, effect):
@@ -133,16 +135,39 @@ class RumbleTest(unittest.TestCase):
                 mock.patch.object(rumble.fcntl, 'ioctl', ioctl), \
                 mock.patch.object(rumble.os, 'write') as write, \
                 mock.patch.object(rumble.os, 'close') as close, \
-                mock.patch.object(rumble.time, 'sleep'):
-            rumble.rumble('/dev/input/event0')
+                mock.patch.object(rumble.time, 'sleep') as sleep:
+            call()
 
+        self.assertEqual(sent['request'], rumble.EVIOCSFF)
         effect_type, effect_id, _direction, _button, _interval, length, delay, strong, weak = \
             struct.unpack(rumble.FF_EFFECT, sent['effect'])
-        self.assertEqual(sent['request'], rumble.EVIOCSFF)
-        self.assertEqual((effect_type, effect_id, length, delay), (0x50, -1, 400, 0))
-        self.assertEqual((strong, weak), (0xC000, 0xC000))
+        self.assertEqual((effect_type, effect_id, delay), (0x50, -1, 0))
         write.assert_called_once_with(7, struct.pack('llHHi', 0, 0, EV_FF, 5, 1))
         close.assert_called_once_with(7)
+        sleep.assert_called_once_with(length / 1000 + 0.1)
+        return length, strong, weak
+
+    def test_plays_one_rumble_and_closes(self):
+        """Test Vibration: both motors at 75% (0xC000) for 0.4 s"""
+        self.assertEqual(self.play(lambda: rumble.rumble('/dev/input/event0')), (400, 0xC000, 0xC000))
+        self.assertEqual(self.play(lambda: rumble.main(['/dev/input/event0'])), (400, 0xC000, 0xC000))
+
+    def test_vibration_lab_values(self):
+        played = self.play(lambda: rumble.main(['--strong', '30', '--weak', '100', '--length', '1200',
+                                                '/dev/input/event0']))
+        self.assertEqual(played, (1200, rumble.magnitude(30), 0xFFFF))
+
+    def test_values_are_brought_within_limits(self):
+        played = self.play(lambda: rumble.main(['--strong', '150', '--weak', '-5', '--length', '60000',
+                                                '/dev/input/event0']))
+        self.assertEqual(played, (2000, 0xFFFF, 0))
+        self.assertEqual(self.play(lambda: rumble.rumble('/dev/input/event0', length=1))[0], 50)
+
+    def test_strengths_survive_scaling_back_to_percent(self):
+        """hid-microsoft turns the magnitude back into 0-100 with magnitude * 100 / 0xFFFF"""
+        for percent in range(101):
+            self.assertEqual(rumble.magnitude(percent) * 100 // 0xFFFF, percent)
+            self.assertLessEqual(rumble.magnitude(percent), 0xFFFF)
 
 
 if __name__ == '__main__':

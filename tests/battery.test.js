@@ -3,7 +3,10 @@
 
 // The battery helpers, on made-up UPower readings. Run: gjs -m tests/battery.test.js
 
-import {batteryFor, batteryIcon, batteryIsLow, batteryText} from '../src/battery.js';
+import {
+    batteryFor, batteryIcon, batteryIsCharging, batteryIsLow, batteryLevelName, batteryLowStage,
+    batteryText,
+} from '../src/battery.js';
 import {done, equal, test} from './harness.js';
 
 // UPower's State and BatteryLevel values
@@ -52,6 +55,38 @@ test('a coarse level decides over the percentage and the setting', () => {
     equal(batteryIsLow(reading(90, DISCHARGING, CRITICAL), 20), true, 'Critical');
     equal(batteryIsLow(reading(5, DISCHARGING, NORMAL), 50), false, 'Normal');
     equal(batteryIsLow(reading(5, DISCHARGING, HIGH), 50), false, 'High');
+});
+
+test('how far down the charge is: low at the level, very low at 10% as well', () => {
+    equal(batteryLowStage(reading(21), 20), 0, '21% with the default level');
+    equal(batteryLowStage(reading(20), 20), 1, '20%');
+    equal(batteryLowStage(reading(11), 20), 1, '11%');
+    equal(batteryLowStage(reading(10), 20), 2, '10%');
+    equal(batteryLowStage(reading(0), 20), 2, '0%');
+    equal(batteryLowStage(reading(10, CHARGING), 20), 2, 'charging does not change the charge');
+});
+
+test('with the level at 10% or below, low is very low at once', () => {
+    equal(batteryLowStage(reading(11), 10), 0, '11% with the level at 10');
+    equal(batteryLowStage(reading(10), 10), 2, '10% with the level at 10');
+    equal(batteryLowStage(reading(6), 5), 0, '6% with the lowest level');
+    equal(batteryLowStage(reading(5), 5), 2, '5% with the lowest level');
+});
+
+test('a coarse level gives the stage itself', () => {
+    equal(batteryLowStage(reading(90, DISCHARGING, LOW), 20), 1, 'Low');
+    equal(batteryLowStage(reading(90, DISCHARGING, CRITICAL), 20), 2, 'Critical');
+    equal(batteryLowStage(reading(5, DISCHARGING, NORMAL), 50), 0, 'Normal');
+    equal(batteryLowStage(reading(5, DISCHARGING, FULL), 50), 0, 'Full');
+    equal(batteryLevelName(reading(5, DISCHARGING, CRITICAL)), 'Critical', 'its name');
+    equal(batteryLevelName(reading(5)), null, 'no name for a percentage');
+});
+
+test('charging and charged count as on a cable', () => {
+    equal(batteryIsCharging(reading(50, CHARGING)), true, 'charging');
+    equal(batteryIsCharging(reading(100, FULLY_CHARGED)), true, 'charged');
+    equal(batteryIsCharging(reading(50, DISCHARGING)), false, 'discharging');
+    equal(batteryIsCharging(reading(50, UNKNOWN)), false, 'no state, as from BlueZ');
 });
 
 test('battery icons in steps of ten', () => {

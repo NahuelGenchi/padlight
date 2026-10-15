@@ -32,6 +32,14 @@ export default class PadlightPreferences extends ExtensionPreferences {
             Gio.SettingsBindFlags.DEFAULT);
         battery.add(lowLevel);
 
+        const alerts = new Adw.SwitchRow({
+            title: 'Low battery alerts',
+            subtitle: 'A notification when a controller reaches the low level, and again at 10%',
+        });
+        window._settings.bind('low-battery-alerts', alerts, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
+        battery.add(alerts);
+
         const connections = new Adw.PreferencesGroup({title: 'Connections'});
         page.add(connections);
 
