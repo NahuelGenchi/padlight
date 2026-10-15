@@ -230,6 +230,41 @@ class RumbleTest(unittest.TestCase):
         self.assertEqual(played, (2000, 0xFFFF, 0))
         self.assertEqual(self.play(lambda: rumble.rumble('/dev/input/event0', length=1))[0], 50)
 
+    def find(self, write):
+        """Runs --find with the device faked and the given write mock; returns
+        the effect sent and the sleep and close mocks."""
+        sent = []
+
+        def ioctl(_fd, _request, effect):
+            sent.append(bytes(effect))
+            struct.pack_into('h', effect, 2, 5)
+
+        with mock.patch.object(rumble.os, 'open', return_value=7), \
+                mock.patch.object(rumble.fcntl, 'ioctl', ioctl), \
+                mock.patch.object(rumble.os, 'write', write), \
+                mock.patch.object(rumble.os, 'close') as close, \
+                mock.patch.object(rumble.time, 'sleep') as sleep:
+            try:
+                rumble.main(['--find', '/dev/input/event0'])
+            finally:
+                close.assert_called_once_with(7)
+        self.assertEqual(len(sent), 1)
+        return struct.unpack(rumble.FF_EFFECT, sent[0]), sleep
+
+    def test_find_plays_ten_full_bursts(self):
+        write = mock.Mock()
+        effect, sleep = self.find(write)
+        _type, _id, _direction, _button, _interval, length, _delay, strong, weak = effect
+        self.assertEqual((length, strong, weak), (300, 0xFFFF, 0xFFFF))
+        self.assertEqual(write.call_args_list, [mock.call(7, struct.pack('llHHi', 0, 0, EV_FF, 5, 1))] * 10)
+        self.assertEqual(sleep.call_args_list, [mock.call(0.6)] * 10)
+
+    def test_find_ends_when_the_controller_goes(self):
+        write = mock.Mock(side_effect=[None, None, OSError(19, 'No such device')])
+        with self.assertRaises(OSError):
+            self.find(write)
+        self.assertEqual(write.call_count, 3)
+
     def test_strengths_survive_scaling_back_to_percent(self):
         """hid-microsoft turns the magnitude back into 0-100 with magnitude * 100 / 0xFFFF"""
         for percent in range(101):

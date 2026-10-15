@@ -3,10 +3,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Plays a rumble on a game controller:
 rumble.py [--strong PERCENT] [--weak PERCENT] [--length MS] /dev/input/eventN
+rumble.py --find /dev/input/eventN
 
 The strong motor is the left one, the weak motor the right one. Without
 options it plays Test Vibration's short buzz. Strengths run from 0 to 100 and
-the length from 50 ms to 2 s; values outside are brought within.
+the length from 50 ms to 2 s; values outside are brought within. --find plays
+Find Controller's bursts instead.
+
+Stopping the program stops the controller too: closing the device removes the
+effect.
 """
 import argparse
 import fcntl
@@ -21,6 +26,11 @@ DURATION_MS = 400
 STRENGTH = 75
 MIN_LENGTH_MS = 50
 MAX_LENGTH_MS = 2000
+# --find: both motors at full strength for FIND_ON_MS, once every FIND_EVERY_MS,
+# FIND_BURSTS times, to find the controller by feel or sound
+FIND_BURSTS = 10
+FIND_ON_MS = 300
+FIND_EVERY_MS = 600
 
 # struct ff_effect (with the rumble member of its union) and struct input_event
 FF_EFFECT = 'HhHHHHHxxHH28x'
@@ -35,19 +45,38 @@ def magnitude(percent):
     return math.ceil(min(max(percent, 0), 100) * 0xFFFF / 100)
 
 
+def upload(fd, strong, weak, length):
+    """Gives the controller a rumble effect, and returns its id."""
+    # id -1 asks the kernel for a free effect slot; it writes the id back.
+    effect = bytearray(struct.pack(
+        FF_EFFECT, FF_RUMBLE, -1, 0, 0, 0, length, 0, magnitude(strong), magnitude(weak)))
+    fcntl.ioctl(fd, EVIOCSFF, effect)
+    return struct.unpack_from('h', effect, 2)[0]
+
+
+def play(fd, effect_id):
+    os.write(fd, struct.pack(INPUT_EVENT, 0, 0, EV_FF, effect_id, 1))
+
+
 def rumble(path, strong=STRENGTH, weak=STRENGTH, length=DURATION_MS):
     length = round(min(max(length, MIN_LENGTH_MS), MAX_LENGTH_MS))
     fd = os.open(path, os.O_RDWR)
     try:
-        # id -1 asks the kernel for a free effect slot; it writes the id back.
-        effect = bytearray(struct.pack(
-            FF_EFFECT, FF_RUMBLE, -1, 0, 0, 0, length, 0, magnitude(strong), magnitude(weak)))
-        fcntl.ioctl(fd, EVIOCSFF, effect)
-        effect_id = struct.unpack_from('h', effect, 2)[0]
-        os.write(fd, struct.pack(INPUT_EVENT, 0, 0, EV_FF, effect_id, 1))
+        play(fd, upload(fd, strong, weak, length))
         time.sleep(length / 1000 + 0.1)
     finally:
         # Closing the device also removes the effect.
+        os.close(fd)
+
+
+def find(path):
+    fd = os.open(path, os.O_RDWR)
+    try:
+        effect_id = upload(fd, 100, 100, FIND_ON_MS)
+        for _ in range(FIND_BURSTS):
+            play(fd, effect_id)
+            time.sleep(FIND_EVERY_MS / 1000)
+    finally:
         os.close(fd)
 
 
@@ -56,9 +85,13 @@ def main(args=None):
     parser.add_argument('--strong', type=float, default=STRENGTH, help='left motor, 0 to 100')
     parser.add_argument('--weak', type=float, default=STRENGTH, help='right motor, 0 to 100')
     parser.add_argument('--length', type=float, default=DURATION_MS, help='milliseconds, 50 to 2000')
+    parser.add_argument('--find', action='store_true', help="Find Controller's bursts")
     parser.add_argument('device')
     options = parser.parse_args(args)
-    rumble(options.device, options.strong, options.weak, options.length)
+    if options.find:
+        find(options.device)
+    else:
+        rumble(options.device, options.strong, options.weak, options.length)
 
 
 if __name__ == '__main__':

@@ -170,6 +170,8 @@ export const ControllerCard = GObject.registerClass({
         // The vibration lab's Play: strong and weak motor in percent, length in ms
         'play': {param_types: [GObject.TYPE_INT, GObject.TYPE_INT, GObject.TYPE_INT]},
         'disconnect': {},
+        // Find Controller, pressed to start or to stop
+        'find': {},
         'mode-changed': {param_types: [GObject.TYPE_STRING]},
     },
 }, class ControllerCard extends Card {
@@ -183,9 +185,11 @@ export const ControllerCard = GObject.registerClass({
      * @param {string} options.mode - what the card shows first: picture, sticks, buttons or vibration
      * @param {object} options.checklist - the controller's Checklist, kept by the menu
      * @param {object} options.vibration - the vibration lab's values, kept by the menu
+     * @param {boolean} options.finding - whether Find Controller is playing
      */
-    _init(controller, battery, assets,
-        {compact, lowBattery, mode = 'picture', checklist = null, vibration = null}) {
+    _init(controller, battery, assets, {
+        compact, lowBattery, mode = 'picture', checklist = null, vibration = null, finding = false,
+    }) {
         super._init();
 
         const since = controller.since
@@ -268,6 +272,14 @@ export const ControllerCard = GObject.registerClass({
             });
             actions.push(rumble);
         }
+        // Bursts of vibration, to find a wireless controller by feel or sound
+        this._find = null;
+        if (controller.rumble && controller.connection !== 'usb') {
+            this._find = button('Find Controller');
+            this._find.connect('clicked', () => this.emit('find'));
+            actions.push(this._find);
+            this.setFinding(finding);
+        }
         if (controller.connection === 'bluetooth' && controller.address) {
             const disconnect = button('Disconnect');
             disconnect.connect('clicked', () => this.emit('disconnect'));
@@ -294,6 +306,16 @@ export const ControllerCard = GObject.registerClass({
                 x_align: Clutter.ActorAlign.CENTER,
             }));
         }
+    }
+
+    /**
+     * Shows whether Find Controller is playing; its button then stops it.
+     *
+     * @param {boolean} finding
+     */
+    setFinding(finding) {
+        if (this._find)
+            this._find.label = finding ? 'Stop Finding' : 'Find Controller';
     }
 
     start() {
