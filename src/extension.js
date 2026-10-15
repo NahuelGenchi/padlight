@@ -14,10 +14,14 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {batteryFor, listBatteries} from './battery.js';
+import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {Notifier} from './notifications.js';
 
 const DIMMED = 110;
+// How long a connection notice waits for the controller's battery reading
+const BATTERY_WAIT_MS = 2000;
 
 function spawn(argv) {
     try {
@@ -67,6 +71,10 @@ class PadlightIndicator extends PanelMenu.Button {
         this._batteryRequest = 0;
         this._shown = null;
         this._scanId = 0;
+        // Whether the controllers there at start have been seen: they get no notice
+        this._scanned = false;
+        // Connection notices waiting for a battery reading, by device path
+        this._waitingNotices = new Map();
         this._cards = [];
         // What each controller's card shows, kept while the menu is rebuilt
         this._modes = new Map();
@@ -97,6 +105,7 @@ class PadlightIndicator extends PanelMenu.Button {
 
         this._icon = new St.Icon({gicon: this._assets.logo, style_class: 'system-status-icon'});
         this.add_child(this._icon);
+        this._notifier = new Notifier(this._assets.logo);
 
         // A controller shows up as new nodes in /dev/input, wired or not.
         this._monitor = Gio.File.new_for_path('/dev/input')
@@ -141,7 +150,11 @@ class PadlightIndicator extends PanelMenu.Button {
     }
 
     _scan() {
+        const before = this._controllers;
         this._controllers = scanControllers();
+        if (this._scanned)
+            this._noticeConnections(before);
+        this._scanned = true;
         this._sync();
         this._refreshBatteries();
     }
@@ -158,7 +171,67 @@ class PadlightIndicator extends PanelMenu.Button {
         if (request !== this._batteryRequest || this._cancellable.is_cancelled())
             return;
         this._batteries = batteries;
+        this._sendWaitingNotices();
         this._sync();
+    }
+
+    // --- Connection notices ---
+
+    _noticeConnections(before) {
+        const {arrived, left} = connectionChanges(before, this._controllers);
+        for (const controller of left) {
+            // Gone before its notice went out: there is nothing to tell.
+            if (this._waitingNotices.has(controller.path)) {
+                GLib.source_remove(this._waitingNotices.get(controller.path));
+                this._waitingNotices.delete(controller.path);
+                continue;
+            }
+            this._notice(controller, null, false);
+        }
+        for (const controller of arrived) {
+            // The battery reading can come a moment after the controller, and
+            // on a cable there is none.
+            const battery = batteryFor(controller, this._batteries);
+            if (battery || controller.connection === 'usb') {
+                this._notice(controller, battery, true);
+                continue;
+            }
+            this._waitingNotices.set(controller.path,
+                GLib.timeout_add(GLib.PRIORITY_DEFAULT, BATTERY_WAIT_MS, () => {
+                    this._waitingNotices.delete(controller.path);
+                    this._notice(controller, null, true);
+                    return GLib.SOURCE_REMOVE;
+                }));
+        }
+    }
+
+    // Sends the notices that were waiting for a battery reading, now that
+    // there is one.
+    _sendWaitingNotices() {
+        for (const [path, id] of this._waitingNotices) {
+            const controller = this._controllers.find(c => c.path === path);
+            const battery = controller ? batteryFor(controller, this._batteries) : null;
+            if (!battery)
+                continue;
+            GLib.source_remove(id);
+            this._waitingNotices.delete(path);
+            this._notice(controller, battery, true);
+        }
+    }
+
+    _notice(controller, battery, connected) {
+        if (!this._settings.get_boolean('connection-notices'))
+            return;
+        // The newest notice for a controller replaces the one before, so a
+        // quick reconnect leaves one notice.
+        this._notifier.notify(noticeKey(controller), {
+            ...noticeText(controller, battery, connected),
+            iconName: 'input-gaming-symbolic',
+            // Feedback on turning a controller on or off, so it shows even
+            // over a full-screen game. Once seen, it leaves the list.
+            forFeedback: true,
+            isTransient: true,
+        });
     }
 
     // Looks, once each time the menu opens, at which of the user's own
@@ -273,6 +346,9 @@ class PadlightIndicator extends PanelMenu.Button {
         if (this._scanId)
             GLib.source_remove(this._scanId);
         this._scanId = 0;
+        for (const id of this._waitingNotices.values())
+            GLib.source_remove(id);
+        this._waitingNotices.clear();
         this._monitor.disconnect(this._monitorId);
         this._monitor.cancel();
         this._monitor = null;
@@ -280,6 +356,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._upowerId = 0;
         this._settings.disconnect(this._settingsId);
         this._settings = null;
+        this._notifier.destroy();
         this._cards = [];
         this._cardsByPath.clear();
         super.destroy();
