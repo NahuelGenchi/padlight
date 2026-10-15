@@ -26,7 +26,7 @@ Every meaningful action must stay discoverable through that chain. Routine reads
 
 ## Checks
 
-Source checks (`node --check` on the files in `src/`, `python3 -m py_compile` on the two helpers) establish that the code parses, nothing more. Live checks run the extension in a separate, hidden GNOME Shell with its own settings, as described in [AGENTS.md](AGENTS.md); they never touch your running session. Hardware checks name the controller, its connection and its driver. Report each separately in the PR's delivery record, and say what was not run, including whether a controller was real or simulated.
+Source checks (`node --check` on the files in `src/`, `python3 -m py_compile` on the two helpers, `glib-compile-schemas --strict` on the settings schema) establish that the code parses and the schema compiles, nothing more. `tests/run.sh` runs them together with the tests in `tests/`, and the Checks workflow runs the same on every PR. The tests use made-up sysfs trees, battery readings and devices: they show that detection, battery matching and the helpers' parsing work, not that the extension behaves in GNOME Shell. A change to any of those comes with a test. Live checks run the extension in a separate, hidden GNOME Shell with its own settings, as described in [AGENTS.md](AGENTS.md); they never touch your running session. Hardware checks name the controller, its connection and its driver. Report each separately in the PR's delivery record, and say what was not run, including whether a controller was real or simulated.
 
 A change to how the menu looks is checked on a dark and a light menu before it is proposed.
 

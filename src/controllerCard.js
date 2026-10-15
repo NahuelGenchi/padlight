@@ -86,13 +86,13 @@ function grid(children) {
     return box;
 }
 
-function batteryFact(controller, battery) {
+function batteryFact(controller, battery, lowBattery) {
     if (battery) {
         return {
             caption: 'Battery',
             value: batteryText(battery),
             icon: {icon_name: batteryIcon(battery)},
-            warning: batteryIsLow(battery),
+            warning: batteryIsLow(battery, lowBattery),
         };
     }
     // The kernel's USB driver for Xbox pads does not read the battery; on a
@@ -103,10 +103,10 @@ function batteryFact(controller, battery) {
 }
 
 // Everything worth telling about a controller, the most useful first
-function facts(controller, battery, usbIcon) {
+function facts(controller, battery, usbIcon, lowBattery) {
     const connection = CONNECTIONS[controller.connection];
     const list = [
-        batteryFact(controller, battery),
+        batteryFact(controller, battery, lowBattery),
         {
             caption: 'Connection',
             value: connection.label,
@@ -170,10 +170,12 @@ export const ControllerCard = GObject.registerClass({
      * @param {object} controller - an entry from scanControllers()
      * @param {object|null} battery - its entry from listBatteries(), if any
      * @param {object} assets - {images, logo, usbIcon, monitorScript}
-     * @param {boolean} compact - leave room for more cards
-     * @param {string} mode - what the card shows first: picture or sticks
+     * @param {object} options
+     * @param {boolean} options.compact - leave room for more cards
+     * @param {number} options.lowBattery - the low battery level, in percent
+     * @param {string} options.mode - what the card shows first: picture or sticks
      */
-    _init(controller, battery, assets, compact = false, mode = 'picture') {
+    _init(controller, battery, assets, {compact, lowBattery, mode = 'picture'}) {
         super._init();
 
         const since = controller.since
@@ -213,7 +215,7 @@ export const ControllerCard = GObject.registerClass({
         this._mode = null;
         this._show(mode);
 
-        const all = facts(controller, battery, assets.usbIcon);
+        const all = facts(controller, battery, assets.usbIcon, lowBattery);
         this.add_child(grid(all.slice(0, TILES).map(tile)));
 
         const actions = [];

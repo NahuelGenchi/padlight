@@ -24,14 +24,18 @@ Never describe something as working or complete unless a recorded check establis
 | `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
 | `src/rumble.py` | Plays a short vibration |
 | `src/stylesheet.css` | The card's look on dark and light menus |
+| `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
+| `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, and the Python helpers with fake devices |
+| `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 
 ## Commands
 
 - `./install.sh` installs or updates the extension for the current user and switches it on; `./install.sh --pack` only builds the package; `./install.sh --uninstall` removes it. A running Wayland session loads new extension code only at the next log-in.
-- `for f in src/*.js; do node --check "$f"; done` and `python3 -m py_compile src/monitor.py src/rumble.py` are the source checks. There is no test suite yet.
+- `tests/run.sh` runs the source checks (`node --check` on the JavaScript, `python3 -m py_compile` on the helpers, `glib-compile-schemas --strict` on the settings schema) and the tests in `tests/`. It needs gjs, Node.js, Python 3 and `glib-compile-schemas` but no GNOME session, and the Checks workflow runs it on every PR. A change to detection, battery matching or the helpers comes with a test. It keeps Python's compiled files out of `src/`; to compile a helper by hand, do the same with `PYTHONPYCACHEPREFIX="$(mktemp -d)" python3 -m py_compile src/monitor.py`.
 - In a real session, `journalctl --user -b | grep -i padlight` shows the extension's errors.
 
 ## Working well here
@@ -48,7 +52,9 @@ Never describe something as working or complete unless a recorded check establis
   ```
 
   where `my-check.sh` copies `src/` to `$XDG_DATA_HOME/gnome-shell/extensions/padlight@nahuelgenchi.github.io/`, starts `gnome-shell --headless --virtual-monitor 1920x1080 --unsafe-mode --no-x11 --wayland-display=padlight-test &`, waits until `Main.layoutManager._startingUp` is false, and drives it with `gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell --method org.gnome.Shell.Eval '<JavaScript>'`: for example `Main.extensionManager.enableExtension('padlight@nahuelgenchi.github.io')`, then `Main.panel.statusArea['padlight@nahuelgenchi.github.io'].menu.open()`. Pictures come from `org.gnome.Shell.Screenshot.Screenshot` on `/org/gnome/Shell/Screenshot`. A virtual controller created through `/dev/uinput` exercises detection and the live picture without real hardware; a virtual pointer or keyboard from `Clutter.get_default_backend().get_default_seat().create_virtual_device()` exercises hover, clicks and keyboard focus.
-- Before clicking or pressing keys in a test menu, set the test shell's `PATH` to a folder that does not exist (Eval `imports.gi.GLib.setenv('PATH', '/nonexistent', true)`), or Disconnect and Bluetooth Settings run the real `bluetoothctl` and Settings.
+- Before clicking or pressing keys in a test menu, point the test shell's `PATH` at a scratch folder that holds only links to `python3` and `bwrap`, or Disconnect and Bluetooth Settings run the real `bluetoothctl` and Settings. For example, `mkdir -p /tmp/padlight-test/bin && ln -s /usr/bin/python3 /usr/bin/bwrap /tmp/padlight-test/bin/`, then Eval `imports.gi.GLib.setenv('PATH', '/tmp/padlight-test/bin', true)`. Do not use a folder that does not exist:
+  - Padlight's helpers need `python3`, or the live picture stays still and Test Vibration does nothing.
+  - GNOME Shell saves screenshots through glycin, which starts `bwrap` from `PATH`. Without it, the Screenshot call still answers true but writes an empty file.
 - To check `install.sh` and what happens at the next log-in, also point `HOME` and `XDG_CACHE_HOME` at the scratch folder and use `GSETTINGS_BACKEND=keyfile` instead, which keeps settings between commands in `$XDG_CONFIG_HOME/glib-2.0/settings/keyfile`. Run `./install.sh` first, then start the hidden shell: it should load Padlight by itself.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
