@@ -31,5 +31,15 @@ SPDX-License-Identifier: GPL-2.0-or-later
       <summary>Hide the icon without a controller</summary>
       <description>Whether to hide the top-bar icon while no controller is connected. It comes back as soon as one connects.</description>
     </key>
+    <key name="nicknames" type="a{s(ss)}">
+      <default>{}</default>
+      <summary>Nicknames</summary>
+      <description>Each controller's nickname and its model's name, under a key made from the controller's Bluetooth address or USB serial number and the nickname salt. The address and the serial number themselves are not kept.</description>
+    </key>
+    <key name="nickname-salt" type="s">
+      <default>''</default>
+      <summary>Nickname salt</summary>
+      <description>Random text, made when the first nickname is set, that goes into every nickname's key, so the same controller has a different key on another computer.</description>
+    </key>
   </schema>
 </schemalist>

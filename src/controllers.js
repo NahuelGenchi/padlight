@@ -79,6 +79,19 @@ function modifiedTime(path) {
     }
 }
 
+// The serial number of the USB device that a controller's input device hangs
+// from. USB devices are named by bus and port, such as 1-2 or 1-2.4; that
+// stops the search before the root hub above (usb1), whose serial number is
+// the same for every device on it.
+function usbSerial(parent) {
+    let dir = parent;
+    for (let i = 0; i < 4 && dir; i++, dir = GLib.path_get_dirname(dir)) {
+        if (/^\d+-[\d.]+$/.test(GLib.path_get_basename(dir)))
+            return readText(`${dir}/serial`) || null;
+    }
+    return null;
+}
+
 // The version is binary-coded decimal: 0509 -> "5.9"
 function firmwareLabel(version) {
     if (version === '0000')
@@ -147,6 +160,9 @@ export function scanControllers(sysRoot = '/sys', devDir = '/dev/input') {
             driver,
             // Bluetooth address of the controller, empty over USB
             address: readText(`${path}/uniq`) || null,
+            // Serial number of a controller on a cable, for its nickname. The
+            // adapter's own would be the same for each of its controllers.
+            serial: connection === 'usb' && parent ? usbSerial(parent) : null,
             eventNode: `${devDir}/${eventNode}`,
             jsNode: jsNode ? `${devDir}/${jsNode}` : null,
             rumble: ff.split(',').includes(FF_RUMBLE),
