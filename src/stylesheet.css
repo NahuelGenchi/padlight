@@ -41,6 +41,12 @@
 
 .padlight-buttons-row { padding: 0 12px 6px 14px; }
 .padlight-buttons-count { font-size: 0.85em; font-feature-settings: "tnum"; }
+.padlight-lab { padding: 8px 16px; }
+.padlight-lab-content { spacing: 10px; }
+.padlight-lab-compact .padlight-lab-content { spacing: 4px; }
+.padlight-lab-group { spacing: 2px; }
+.padlight-lab-value { font-size: 0.85em; font-feature-settings: "tnum"; }
+.padlight-lab-play { min-width: 120px; }
 
 /* --- Menu card: colours on a dark menu --- */
 

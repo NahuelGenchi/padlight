@@ -148,6 +148,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>A short rumble to check the motors, on controllers that can vibrate.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Vibration lab</strong></td>
+    <td>The <em>Vibration</em> tab, on controllers that can vibrate: how hard the strong motor on the left and the weak motor on the right run, from 0 to 100%, and for how long, from 0.1 to 2 seconds, then Play. The settings stay while the controller is connected. Linux drives only these two motors; the motors in the triggers are not part of it.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Disconnect</strong></td>
     <td>Disconnects a Bluetooth controller from the computer, through <code>bluetoothctl</code>.</td>
   </tr>
@@ -224,7 +228,7 @@ flowchart TB
     end
     subgraph helpers["Python helpers"]
         monitor["<b>monitor.py</b><br/>buttons, sticks"]
-        rumble["<b>rumble.py</b><br/>short vibration"]
+        rumble["<b>rumble.py</b><br/>vibration"]
     end
     kernel --> shell
     upower --> shell
@@ -245,12 +249,13 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device |
 | `src/battery.js` | Battery readings from UPower |
 | `src/firmware.js` | The newest firmware known for each controller, for the update hint |
-| `src/controllerCard.js` | The card: header, the picture, the stick check or the button checklist and their tabs, tiles, buttons, and the empty state |
+| `src/controllerCard.js` | The card: header, the picture, the stick check, the button checklist or the vibration lab and their tabs, tiles, buttons, and the empty state |
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
 | `src/controllerCheck.js` | The stick check: the sticks before any dead zone, the triggers, where the sticks rest |
 | `src/buttonCheck.js`, `src/checklist.js` | The button checklist: the picture with every pressed button lit, and the count |
 | `src/inputMonitor.js` | Runs `monitor.py` for a card while the menu is open |
-| `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a short vibration |
+| `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a vibration of a set strength and length |
+| `src/vibrationLab.js` | The vibration lab: the two motors' strengths, the length and Play |
 | `src/inuse.py` | The helper that finds which programs have a controller open |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
