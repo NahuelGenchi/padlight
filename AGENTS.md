@@ -28,7 +28,8 @@ Never describe something as working or complete unless a recorded check establis
 | `src/buttonCheck.js` | The Buttons tab: the picture with the checklist's buttons lit, the count and Reset |
 | `src/checklist.js` | The button checklist's bookkeeping: which buttons a controller has (from its modalias), which have been pressed |
 | `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
-| `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
+| `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check; `--activity` only says, at most every five seconds, that the controller is in use |
+| `src/keepAwake.js` | Keep the screen awake: a `monitor.py --activity` reader per controller while the switch is on, and GNOME's idle inhibitor (`org.gnome.SessionManager.Inhibit`), let go ten seconds after the last input |
 | `src/rumble.py` | Plays a vibration: Test Vibration's short buzz, or the strengths and length from the vibration lab, within its limits |
 | `src/vibrationLab.js` | The Vibration tab: a slider for each motor and the length, and Play |
 | `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
@@ -67,10 +68,11 @@ Never describe something as working or complete unless a recorded check establis
 - To check `install.sh` and what happens at the next log-in, also point `HOME` and `XDG_CACHE_HOME` at the scratch folder and use `GSETTINGS_BACKEND=keyfile` instead, which keeps settings between commands in `$XDG_CONFIG_HOME/glib-2.0/settings/keyfile`. Run `./install.sh` first, then start the hidden shell: it should load Padlight by itself.
 - Pair a Controller talks to BlueZ on the system bus, which a hidden shell shares with the real session. Before using it in a test menu, give the test shell a private system bus (`DBUS_SYSTEM_BUS_ADDRESS`), with a stand-in `org.bluez` on it to test pairing. Otherwise a search runs on the computer's real Bluetooth adapter, and choosing a controller pairs it.
 - A notification banner in the hidden shell stays up until there is input, as GNOME keeps banners for an idle user, and later ones wait behind it. Clear them between checks, for example by destroying the notifications of each source in `Main.messageTray.getSources()`.
+- The hidden shell has no gnome-session. To check Keep the screen awake, own `org.gnome.SessionManager` on its session bus with a stand-in that answers `Inhibit` and `Uninhibit` and keeps the `InhibitedActions` property. Mutter's idle clock follows that property and starts again when the inhibitor goes, which `global.backend.get_core_idle_monitor().get_idletime()` shows.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
 - When a newer controller firmware line appears, update `src/firmware.js` with a source, such as a kernel log of a controller running it. Only list versions that were seen, so a current controller is never called out of date.
-- The helpers read input devices without grabbing them, so games keep working, and they only run while the menu is open. Keep both true.
+- The helpers read input devices without grabbing them, so games keep working, and they only run while the menu is open. The one exception is `monitor.py --activity`, which runs while Keep the screen awake is on and a controller is connected. Keep all of that true.
 - Record what a check covered and what it did not, in the PR: hidden shell or real session, simulated or real controller, which connection.
 
 ## Private data
