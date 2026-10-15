@@ -30,6 +30,8 @@ body:
         - M1 — Indicator and live view
         - M2 — More controllers
         - M3 — Release
+        - M4 — Settings and alerts
+        - M5 — Controller tools
       default: 1
     validations:
       required: true

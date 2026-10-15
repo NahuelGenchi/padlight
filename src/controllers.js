@@ -151,6 +151,10 @@ export function scanControllers(sysRoot = '/sys', devDir = '/dev/input') {
             rumble: ff.split(',').includes(FF_RUMBLE),
             since: modifiedTime(`${devDir}/${eventNode}`),
             powerSupplies: parent ? childNames(`${parent}/power_supply`) : [],
+            // Raw HID access, which some programs use instead of the input nodes
+            hidrawNodes: parent
+                ? childNames(`${parent}/hidraw`).map(n => `${GLib.path_get_dirname(devDir)}/${n}`)
+                : [],
         });
     }
 
