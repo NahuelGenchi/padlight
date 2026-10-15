@@ -429,6 +429,8 @@ class PadlightIndicator extends PanelMenu.Button {
     }
 
     destroy() {
+        // Closing the menu runs its handlers, which need everything below.
+        this.menu.close();
         this._cancellable.cancel();
         if (this._scanId)
             GLib.source_remove(this._scanId);
