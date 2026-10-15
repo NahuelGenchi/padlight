@@ -15,22 +15,28 @@ Never describe something as working or complete unless a recorded check establis
 | `src/metadata.json` | Extension ID (`padlight@nahuelgenchi.github.io`), name, supported GNOME Shell versions |
 | `src/extension.js` | The top-bar button: finds controllers, keeps the menu current, starts the helpers |
 | `src/controllers.js` | Finds Xbox controllers in sysfs: connection, model, firmware, driver, device nodes |
-| `src/battery.js` | Battery readings from UPower, matched to a controller, and the lowest one for the top bar |
+| `src/battery.js` | Battery readings from UPower, matched to a controller, how low they are, and the lowest one for the top bar |
+| `src/batteryAlerts.js` | When a low battery alert is due and what it says; the extension keeps it while the screen is locked, so unlocking repeats nothing |
+| `src/connectionNotices.js` | Which controllers came and went between two scans, how a controller is told apart across reconnects, and what a connection notice says |
+| `src/notifications.js` | Padlight's source in the message tray; a notification replaces the last one sent with the same key |
 | `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
-| `src/controllerCard.js` | The menu card: header, live picture or stick check and their tabs, information tiles, buttons, and the empty state |
+| `src/controllerCard.js` | The menu card: header, live picture, stick check, button checklist or vibration lab and their tabs, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
 | `src/controllerCheck.js` | The stick check: raw stick positions, the triggers, where each stick rests |
+| `src/buttonCheck.js` | The Buttons tab: the picture with the checklist's buttons lit, the count and Reset |
+| `src/checklist.js` | The button checklist's bookkeeping: which buttons a controller has (from its modalias), which have been pressed |
 | `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
 | `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
-| `src/rumble.py` | Plays a short vibration |
+| `src/rumble.py` | Plays a vibration: Test Vibration's short buzz, or the strengths and length from the vibration lab, within its limits |
+| `src/vibrationLab.js` | The Vibration tab: a slider for each motor and the length, and Play |
 | `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
-| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, the firmware table, and the Python helpers with fake devices and a made-up `/proc` |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers and alerts, the connection notices, the firmware table, the button checklist, and the Python helpers with fake devices and a made-up `/proc` |
 | `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 
@@ -58,6 +64,7 @@ Never describe something as working or complete unless a recorded check establis
   - Padlight's helpers need `python3`, or the live picture stays still and Test Vibration does nothing.
   - GNOME Shell saves screenshots through glycin, which starts `bwrap` from `PATH`. Without it, the Screenshot call still answers true but writes an empty file.
 - To check `install.sh` and what happens at the next log-in, also point `HOME` and `XDG_CACHE_HOME` at the scratch folder and use `GSETTINGS_BACKEND=keyfile` instead, which keeps settings between commands in `$XDG_CONFIG_HOME/glib-2.0/settings/keyfile`. Run `./install.sh` first, then start the hidden shell: it should load Padlight by itself.
+- A notification banner in the hidden shell stays up until there is input, as GNOME keeps banners for an idle user, and later ones wait behind it. Clear them between checks, for example by destroying the notifications of each source in `Main.messageTray.getSources()`.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
 - When a newer controller firmware line appears, update `src/firmware.js` with a source, such as a kernel log of a controller running it. Only list versions that were seen, so a current controller is never called out of date.

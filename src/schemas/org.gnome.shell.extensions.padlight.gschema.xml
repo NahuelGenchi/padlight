@@ -11,6 +11,16 @@ SPDX-License-Identifier: GPL-2.0-or-later
       <summary>Low battery level</summary>
       <description>The charge, in percent, at or below which a controller's battery counts as low and its icon turns orange.</description>
     </key>
+    <key name="low-battery-alerts" type="b">
+      <default>true</default>
+      <summary>Low battery alerts</summary>
+      <description>Whether to send a notification when a controller's battery reaches the low level, and again at 10%.</description>
+    </key>
+    <key name="connection-notices" type="b">
+      <default>true</default>
+      <summary>Connection notices</summary>
+      <description>Whether to send a notification when a controller connects or disconnects.</description>
+    </key>
     <key name="show-battery-level" type="b">
       <default>false</default>
       <summary>Battery level in the top bar</summary>
