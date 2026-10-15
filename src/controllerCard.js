@@ -4,17 +4,24 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import {formatTime} from 'resource:///org/gnome/shell/misc/dateUtils.js';
 
 import {batteryIcon, batteryIsLow, batteryText} from './battery.js';
-import {ControllerView} from './controllerView.js';
+import {ButtonCheck} from './buttonCheck.js';
+import {ControllerCheck} from './controllerCheck.js';
+import {ControllerView, VIEW_HEIGHT} from './controllerView.js';
+import {VibrationLab} from './vibrationLab.js';
 
 const GAP = 8;
 const TILES = 4;
 // Picture height when several controllers share the menu
 const COMPACT_VIEW_HEIGHT = 186;
+
+// What the card's tabs show in the space for the picture
+const MODES = [['picture', 'Picture'], ['sticks', 'Sticks'], ['buttons', 'Buttons'], ['vibration', 'Vibration']];
 
 const CONNECTIONS = {
     usb: {label: 'Wired (USB)', icon: null},
@@ -82,13 +89,13 @@ function grid(children) {
     return box;
 }
 
-function batteryFact(controller, battery) {
+function batteryFact(controller, battery, lowBattery) {
     if (battery) {
         return {
             caption: 'Battery',
             value: batteryText(battery),
             icon: {icon_name: batteryIcon(battery)},
-            warning: batteryIsLow(battery),
+            warning: batteryIsLow(battery, lowBattery),
         };
     }
     // The kernel's USB driver for Xbox pads does not read the battery; on a
@@ -99,10 +106,10 @@ function batteryFact(controller, battery) {
 }
 
 // Everything worth telling about a controller, the most useful first
-function facts(controller, battery, usbIcon) {
+function facts(controller, battery, usbIcon, lowBattery) {
     const connection = CONNECTIONS[controller.connection];
     const list = [
-        batteryFact(controller, battery),
+        batteryFact(controller, battery, lowBattery),
         {
             caption: 'Connection',
             value: connection.label,
@@ -116,6 +123,7 @@ function facts(controller, battery, usbIcon) {
             caption: 'Firmware',
             value: controller.firmware,
             icon: {icon_name: 'application-x-firmware-symbolic'},
+            warning: Boolean(controller.firmwareUpdate),
         });
     }
     if (controller.driver)
@@ -153,20 +161,31 @@ class Card extends St.BoxLayout {
     }
 });
 
-// One connected controller: live picture, the facts about it and its actions.
+// One connected controller: live picture, stick check, button checklist or
+// vibration lab, the facts about it and its actions. Reads the controller
+// only between start() and stop().
 export const ControllerCard = GObject.registerClass({
     Signals: {
         'rumble': {},
+        // The vibration lab's Play: strong and weak motor in percent, length in ms
+        'play': {param_types: [GObject.TYPE_INT, GObject.TYPE_INT, GObject.TYPE_INT]},
         'disconnect': {},
+        'mode-changed': {param_types: [GObject.TYPE_STRING]},
     },
 }, class ControllerCard extends Card {
     /**
      * @param {object} controller - an entry from scanControllers()
      * @param {object|null} battery - its entry from listBatteries(), if any
      * @param {object} assets - {images, logo, usbIcon, monitorScript}
-     * @param {boolean} compact - leave room for more cards
+     * @param {object} options
+     * @param {boolean} options.compact - leave room for more cards
+     * @param {number} options.lowBattery - the low battery level, in percent
+     * @param {string} options.mode - what the card shows first: picture, sticks, buttons or vibration
+     * @param {object} options.checklist - the controller's Checklist, kept by the menu
+     * @param {object} options.vibration - the vibration lab's values, kept by the menu
      */
-    _init(controller, battery, assets, compact = false) {
+    _init(controller, battery, assets,
+        {compact, lowBattery, mode = 'picture', checklist = null, vibration = null}) {
         super._init();
 
         const since = controller.since
@@ -174,20 +193,71 @@ export const ControllerCard = GObject.registerClass({
             : 'Connected';
         this.add_child(header(assets.logo, controller.name, since, true));
 
+        const height = compact ? COMPACT_VIEW_HEIGHT : VIEW_HEIGHT;
         this._view = new ControllerView(assets.images, {
             eventNode: controller.eventNode,
             monitorScript: assets.monitorScript,
-            height: compact ? COMPACT_VIEW_HEIGHT : null,
+            height,
         });
+        this._check = new ControllerCheck({
+            eventNode: controller.eventNode,
+            monitorScript: assets.monitorScript,
+            height,
+            compact,
+        });
+        // What each tab shows
+        this._panes = new Map([['picture', this._view], ['sticks', this._check]]);
+        if (checklist?.total) {
+            this._panes.set('buttons', new ButtonCheck(assets.images, {
+                eventNode: controller.eventNode,
+                monitorScript: assets.monitorScript,
+                checklist,
+                height,
+            }));
+        }
+        if (controller.rumble && vibration) {
+            this._panes.set('vibration', new VibrationLab({
+                values: vibration,
+                onPlay: ({strong, weak, length}) => this.emit('play', strong, weak, length),
+                height,
+                compact,
+            }));
+        }
         const hero = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'padlight-hero',
         });
-        hero.add_child(this._view);
+        for (const pane of this._panes.values())
+            hero.add_child(pane);
         this.add_child(hero);
 
-        const all = facts(controller, battery, assets.usbIcon);
+        const tabs = new St.BoxLayout({style_class: 'padlight-tabs', x_align: Clutter.ActorAlign.CENTER});
+        this._tabs = new Map(MODES.filter(([name]) => this._panes.has(name)).map(([name, label]) => {
+            const tab = new St.Button({label, style_class: 'padlight-tab', can_focus: true});
+            tab.connect('clicked', () => this._show(name));
+            tabs.add_child(tab);
+            return [name, tab];
+        }));
+        this.add_child(tabs);
+        this._open = false;
+        this._mode = null;
+        this._show(this._panes.has(mode) ? mode : 'picture');
+
+        const all = facts(controller, battery, assets.usbIcon, lowBattery);
         this.add_child(grid(all.slice(0, TILES).map(tile)));
+
+        // Linux has no firmware updater for these controllers
+        if (controller.firmwareUpdate) {
+            const update = new St.Label({
+                text: `Firmware ${controller.firmwareUpdate} is available. Update the controller ` +
+                    'in the Xbox Accessories app on Windows, or on an Xbox console.',
+                style_class: 'padlight-footnote padlight-dim',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+            update.clutter_text.line_wrap = true;
+            update.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+            this.add_child(update);
+        }
 
         const actions = [];
         if (controller.rumble) {
@@ -206,6 +276,16 @@ export const ControllerCard = GObject.registerClass({
         if (actions.length)
             this.add_child(grid(actions));
 
+        // Filled in by setUsers() once Padlight has looked
+        this._users = new St.Label({
+            style_class: 'padlight-footnote padlight-dim',
+            x_align: Clutter.ActorAlign.CENTER,
+            visible: false,
+        });
+        this._users.clutter_text.line_wrap = true;
+        this._users.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this.add_child(this._users);
+
         const rest = all.slice(TILES).map(fact => `${fact.caption} ${fact.value}`);
         if (rest.length && !compact) {
             this.add_child(new St.Label({
@@ -216,8 +296,44 @@ export const ControllerCard = GObject.registerClass({
         }
     }
 
-    get view() {
-        return this._view;
+    start() {
+        this._open = true;
+        this._shown().start();
+    }
+
+    stop() {
+        this._open = false;
+        for (const pane of this._panes.values())
+            pane.stop();
+    }
+
+    _shown() {
+        return this._panes.get(this._mode);
+    }
+
+    _show(mode) {
+        if (mode === this._mode)
+            return;
+        if (this._open)
+            this._shown().stop();
+        this._mode = mode;
+        for (const [name, pane] of this._panes)
+            pane.visible = name === mode;
+        for (const [name, tab] of this._tabs)
+            tab.checked = name === mode;
+        if (this._open)
+            this._shown().start();
+        this.emit('mode-changed', mode);
+    }
+
+    /**
+     * Shows which programs have the controller open.
+     *
+     * @param {string[]} names - readable program names, none if nothing has it open
+     */
+    setUsers(names) {
+        this._users.text = `In use by ${names.join(', ')}`;
+        this._users.visible = names.length > 0;
     }
 });
 

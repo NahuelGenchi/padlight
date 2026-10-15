@@ -2,7 +2,11 @@
 # SPDX-FileCopyrightText: 2026 Nahuel Genchi
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Prints a controller's live input state, one JSON line per change:
-monitor.py /dev/input/eventN
+monitor.py [--raw] /dev/input/eventN
+
+Stick values run from -1 to 1 and trigger values from 0 to 1. The live
+picture gets the sticks with the driver's dead zone taken out; --raw leaves it
+in and gives finer steps, for the stick check.
 
 Reading does not take the device away from games; every reader gets its own
 copy of the events. Ends when the controller goes away or nobody is listening.
@@ -85,25 +89,25 @@ class Controller:
             elif kind == EV_ABS and code in self.axes:
                 self.axes[code] = value
 
-    def _stick(self, code):
+    def _stick(self, code, raw):
         if code not in self.info:
             return 0
         low, high, flat = self.info[code]
         middle = (low + high) / 2
         offset = self.axes[code] - middle
-        if abs(offset) <= flat or high == low:
+        if high == low or (abs(offset) <= flat and not raw):
             return 0
-        return round(max(-1, min(1, offset / ((high - low) / 2))), 2)
+        return round(max(-1, min(1, offset / ((high - low) / 2))), 3 if raw else 2)
 
-    def _trigger(self, code):
+    def _trigger(self, code, raw):
         if code not in self.info:
             return 0
         low, high, _flat = self.info[code]
         if high == low:
             return 0
-        return round(max(0, min(1, (self.axes[code] - low) / (high - low))), 2)
+        return round(max(0, min(1, (self.axes[code] - low) / (high - low))), 3 if raw else 2)
 
-    def state(self):
+    def state(self, raw=False):
         buttons = {KEYS[code] for code in self.keys}
         hat_x, hat_y = self.axes.get(ABS_HAT0X, 0), self.axes.get(ABS_HAT0Y, 0)
         if hat_x:
@@ -111,12 +115,12 @@ class Controller:
         if hat_y:
             buttons.add('up' if hat_y < 0 else 'down')
         state = {'buttons': sorted(buttons)}
-        state.update({name: self._stick(code) for name, code in self.sticks.items()})
-        state.update({name: self._trigger(code) for name, code in self.triggers.items()})
+        state.update({name: self._stick(code, raw) for name, code in self.sticks.items()})
+        state.update({name: self._trigger(code, raw) for name, code in self.triggers.items()})
         return state
 
 
-def main(path):
+def main(path, raw=False):
     fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
     controller = Controller(fd)
 
@@ -140,7 +144,7 @@ def main(path):
 
         if pending and time.monotonic() - shown_at >= 1 / MAX_RATE:
             pending = False
-            state = controller.state()
+            state = controller.state(raw)
             if state != shown:
                 shown = state
                 shown_at = time.monotonic()
@@ -149,6 +153,6 @@ def main(path):
 
 if __name__ == '__main__':
     try:
-        main(sys.argv[1])
+        main(sys.argv[-1], raw='--raw' in sys.argv[1:-1])
     except (OSError, KeyboardInterrupt):
         pass

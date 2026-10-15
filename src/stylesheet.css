@@ -4,6 +4,9 @@
 /* Panel icon while a controller is connected */
 .padlight-active { color: #107c10; }
 
+/* The battery level beside it; orange when low, as on the card */
+.padlight-level { font-feature-settings: "tnum"; }
+
 /* --- Menu card: layout --- */
 
 .padlight-card-item { padding: 8px; }
@@ -25,7 +28,28 @@
 
 .padlight-button { border-radius: 10px; padding: 8px 12px; font-weight: 500; }
 
-.padlight-footnote { font-size: 0.8em; }
+.padlight-footnote { font-size: 0.8em; text-align: center; }
+
+.padlight-tabs { spacing: 4px; }
+.padlight-tab,
+.padlight-chip { border-radius: 99px; padding: 3px 12px; font-size: 0.85em; font-weight: 500; }
+
+.padlight-check { padding: 10px 12px 12px 12px; spacing: 10px; }
+.padlight-check-sticks { spacing: 8px; }
+.padlight-check-stick { spacing: 4px; }
+.padlight-check-values { font-size: 0.85em; font-feature-settings: "tnum"; }
+.padlight-check-triggers { spacing: 16px; }
+.padlight-check-trigger { spacing: 8px; }
+.padlight-check-percent { font-size: 0.85em; font-feature-settings: "tnum"; min-width: 34px; text-align: right; }
+
+.padlight-buttons-row { padding: 0 12px 6px 14px; }
+.padlight-buttons-count { font-size: 0.85em; font-feature-settings: "tnum"; }
+.padlight-lab { padding: 8px 16px; }
+.padlight-lab-content { spacing: 10px; }
+.padlight-lab-compact .padlight-lab-content { spacing: 4px; }
+.padlight-lab-group { spacing: 2px; }
+.padlight-lab-value { font-size: 0.85em; font-feature-settings: "tnum"; }
+.padlight-lab-play { min-width: 120px; }
 
 /* Pair a Controller: what the search is doing */
 .padlight-pair-status { font-size: 0.9em; }
@@ -51,6 +75,11 @@
 .padlight-on-dark .padlight-button { background-color: rgba(255, 255, 255, 0.1); }
 .padlight-on-dark .padlight-button:hover { background-color: rgba(255, 255, 255, 0.17); }
 .padlight-on-dark .padlight-button:active { background-color: rgba(255, 255, 255, 0.24); }
+.padlight-on-dark .padlight-tab,
+.padlight-on-dark .padlight-chip { color: rgba(255, 255, 255, 0.6); }
+.padlight-on-dark .padlight-tab:hover,
+.padlight-on-dark .padlight-chip:hover { background-color: rgba(255, 255, 255, 0.08); }
+.padlight-on-dark .padlight-tab:checked { color: #f5f5f5; background-color: rgba(255, 255, 255, 0.14); }
 
 /* --- Menu card: colours on a light menu --- */
 
@@ -73,5 +102,12 @@
 .padlight-on-light .padlight-button { background-color: rgba(0, 0, 0, 0.08); }
 .padlight-on-light .padlight-button:hover { background-color: rgba(0, 0, 0, 0.13); }
 .padlight-on-light .padlight-button:active { background-color: rgba(0, 0, 0, 0.19); }
+.padlight-on-light .padlight-tab,
+.padlight-on-light .padlight-chip { color: rgba(0, 0, 0, 0.6); }
+.padlight-on-light .padlight-tab:hover,
+.padlight-on-light .padlight-chip:hover { background-color: rgba(0, 0, 0, 0.06); }
+.padlight-on-light .padlight-tab:checked { color: #1c1c1e; background-color: rgba(0, 0, 0, 0.1); }
 
-.padlight-button:focus { box-shadow: inset 0 0 0 2px -st-accent-color; }
+.padlight-button:focus,
+.padlight-tab:focus,
+.padlight-chip:focus { box-shadow: inset 0 0 0 2px -st-accent-color; }

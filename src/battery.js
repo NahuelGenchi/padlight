@@ -11,9 +11,12 @@ const DEVICE_IFACE = 'org.freedesktop.UPower.Device';
 // org.freedesktop.UPower.Device State and BatteryLevel values
 const STATE_CHARGING = 1;
 const STATE_FULLY_CHARGED = 4;
+const LEVEL_LOW = 3;
+const LEVEL_CRITICAL = 4;
 const LEVEL_LABELS = {3: 'Low', 4: 'Critical', 6: 'Normal', 7: 'High', 8: 'Full'};
-const LOW_LEVELS = [3, 4];
-const LOW_PERCENTAGE = 20;
+
+// Where a controller is about to switch off, below the level from the settings
+export const VERY_LOW_PERCENTAGE = 10;
 
 function call(path, iface, method, params, cancellable) {
     return new Promise((resolve, reject) => {
@@ -57,9 +60,14 @@ export function batteryFor(controller, batteries) {
         batteries.find(b => address && b.serial?.toLowerCase() === address) ?? null;
 }
 
+// The name of the level, for a driver that only reports a coarse level and
+// not a percentage; otherwise null
+export function batteryLevelName(battery) {
+    return LEVEL_LABELS[battery.level] ?? null;
+}
+
 export function batteryText(battery) {
-    // Some drivers only report a coarse level, not a percentage.
-    const charge = LEVEL_LABELS[battery.level] ?? `${Math.round(battery.percentage)}%`;
+    const charge = batteryLevelName(battery) ?? `${Math.round(battery.percentage)}%`;
     if (battery.state === STATE_CHARGING)
         return `${charge} · Charging`;
     if (battery.state === STATE_FULLY_CHARGED)
@@ -67,13 +75,26 @@ export function batteryText(battery) {
     return charge;
 }
 
-// Whether it is time to charge or change the batteries
-export function batteryIsLow(battery) {
-    if (battery.state === STATE_CHARGING || battery.state === STATE_FULLY_CHARGED)
-        return false;
+// Whether it is time to charge or change the batteries: at lowPercentage, the
+// level from the settings window, or below. A driver that only reports a
+// coarse level says Low or Critical itself.
+export function batteryIsLow(battery, lowPercentage) {
+    return !batteryIsCharging(battery) && batteryLowStage(battery, lowPercentage) > 0;
+}
+
+export function batteryIsCharging(battery) {
+    return battery.state === STATE_CHARGING || battery.state === STATE_FULLY_CHARGED;
+}
+
+// How far the charge is down, charging or not: 0 above lowPercentage, 1 at it
+// or below, and 2 at VERY_LOW_PERCENTAGE or below as well. A driver that only
+// reports a coarse level says Low (1) or Critical (2) itself.
+export function batteryLowStage(battery, lowPercentage) {
     if (battery.level in LEVEL_LABELS)
-        return LOW_LEVELS.includes(battery.level);
-    return battery.percentage <= LOW_PERCENTAGE;
+        return {[LEVEL_LOW]: 1, [LEVEL_CRITICAL]: 2}[battery.level] ?? 0;
+    if (battery.percentage <= Math.min(VERY_LOW_PERCENTAGE, lowPercentage))
+        return 2;
+    return battery.percentage <= lowPercentage ? 1 : 0;
 }
 
 export function batteryIcon(battery) {
@@ -83,4 +104,27 @@ export function batteryIcon(battery) {
     if (battery.state === STATE_CHARGING)
         return `battery-level-${level}-charging-symbolic`;
     return `battery-level-${level}-symbolic`;
+}
+
+// The charge alone, as the top bar shows it: "45%", or the level's name for a
+// driver that only reports a coarse level
+export function batteryCharge(battery) {
+    return batteryLevelName(battery) ?? `${Math.round(battery.percentage)}%`;
+}
+
+// About where each coarse level sits, to compare it with a percentage
+const LEVEL_PERCENTAGES = {3: 10, 4: 5, 6: 55, 7: 80, 8: 100};
+
+/**
+ * The reading to show for several controllers: the lowest charge, as that
+ * controller needs charging first. One already charging only counts when
+ * every one is.
+ *
+ * @param {Array<object|null>} batteries - a reading per controller, or null
+ * @returns {object|null}
+ */
+export function lowestBattery(batteries) {
+    const charge = b => LEVEL_PERCENTAGES[b.level] ?? b.percentage;
+    const order = (a, b) => batteryIsCharging(a) - batteryIsCharging(b) || charge(a) - charge(b);
+    return batteries.filter(Boolean).sort(order)[0] ?? null;
 }

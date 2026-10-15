@@ -4,6 +4,9 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+import {checklistButtons} from './checklist.js';
+import {newerFirmware} from './firmware.js';
+
 const BUS_BLUETOOTH = '0005';
 const VENDOR_MICROSOFT = '045e';
 
@@ -12,7 +15,7 @@ const BTN_GAMEPAD = '130';
 const FF_RUMBLE = '50';
 
 // input:b<bus>v<vendor>p<product>e<version>-e..k<keys>r..a..m..l..s..f<ff>w..
-const MODALIAS = /^input:b([0-9A-F]{4})v([0-9A-F]{4})p([0-9A-F]{4})e([0-9A-F]{4})-e[0-9A-F,]*k([0-9A-F,]*)r[0-9A-F,]*a[0-9A-F,]*m[0-9A-F,]*l[0-9A-F,]*s[0-9A-F,]*f([0-9A-F,]*)w/;
+const MODALIAS = /^input:b([0-9A-F]{4})v([0-9A-F]{4})p([0-9A-F]{4})e([0-9A-F]{4})-e[0-9A-F,]*k([0-9A-F,]*)r[0-9A-F,]*a([0-9A-F,]*)m[0-9A-F,]*l[0-9A-F,]*s[0-9A-F,]*f([0-9A-F,]*)w/;
 
 // Model number on the controller's label, by USB or Bluetooth product id.
 const MODEL_NUMBERS = {
@@ -101,7 +104,7 @@ export function scanControllers(sysRoot = '/sys', devDir = '/dev/input') {
         const match = MODALIAS.exec(readText(`${classDir}/${entry}/modalias`));
         if (!match)
             continue;
-        const [bus, vendor, product, version, keys, ff] = match.slice(1).map(s => s.toLowerCase());
+        const [bus, vendor, product, version, keys, axes, ff] = match.slice(1).map(s => s.toLowerCase());
         if (!keys.split(',').includes(BTN_GAMEPAD))
             continue;
 
@@ -139,14 +142,22 @@ export function scanControllers(sysRoot = '/sys', devDir = '/dev/input') {
             connection,
             model: vendor === VENDOR_MICROSOFT ? MODEL_NUMBERS[product] ?? null : null,
             firmware: vendor === VENDOR_MICROSOFT ? firmwareLabel(version) : null,
+            // A newer firmware version, when this one is known to be old
+            firmwareUpdate: vendor === VENDOR_MICROSOFT ? newerFirmware(product, version) : null,
             driver,
             // Bluetooth address of the controller, empty over USB
             address: readText(`${path}/uniq`) || null,
             eventNode: `${devDir}/${eventNode}`,
             jsNode: jsNode ? `${devDir}/${jsNode}` : null,
             rumble: ff.split(',').includes(FF_RUMBLE),
+            // What the button checklist asks for
+            buttons: checklistButtons(keys.split(','), axes.split(',')),
             since: modifiedTime(`${devDir}/${eventNode}`),
             powerSupplies: parent ? childNames(`${parent}/power_supply`) : [],
+            // Raw HID access, which some programs use instead of the input nodes
+            hidrawNodes: parent
+                ? childNames(`${parent}/hidraw`).map(n => `${GLib.path_get_dirname(devDir)}/${n}`)
+                : [],
         });
     }
 
