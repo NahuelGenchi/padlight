@@ -22,6 +22,7 @@ import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
 import {Notifier} from './notifications.js';
+import {Pairing, PairingSection} from './pairing.js';
 import {DEFAULT_VIBRATION} from './vibrationLab.js';
 
 const DIMMED = 110;
@@ -109,6 +110,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._extension = extension;
         this._rumbleScript = GLib.build_filenamev([extension.path, 'rumble.py']);
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
+        this._pairing = new Pairing();
 
         // A setting changes what the menu or the top bar shows, or which alerts are due.
         this._settings = extension.getSettings();
@@ -165,6 +167,8 @@ class PadlightIndicator extends PanelMenu.Button {
                 else
                     card.stop();
             }
+            if (!open)
+                this._pairing.menuClosed();
         });
 
         this._scan();
@@ -409,6 +413,7 @@ class PadlightIndicator extends PanelMenu.Button {
                 card.start();
         }
 
+        this.menu.addMenuItem(new PairingSection(this._pairing));
         const bluetooth = new PopupMenu.PopupMenuItem('Bluetooth Settings');
         bluetooth.connect('activate', () => spawn(['gnome-control-center', 'bluetooth']));
         this.menu.addMenuItem(bluetooth);
@@ -446,6 +451,7 @@ class PadlightIndicator extends PanelMenu.Button {
         this._settings.disconnect(this._settingsId);
         this._settings = null;
         this._notifier.destroy();
+        this._pairing.destroy();
         this._cards = [];
         this._cardsByPath.clear();
         super.destroy();

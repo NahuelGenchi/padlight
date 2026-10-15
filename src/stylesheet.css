@@ -51,6 +51,9 @@
 .padlight-lab-value { font-size: 0.85em; font-feature-settings: "tnum"; }
 .padlight-lab-play { min-width: 120px; }
 
+/* Pair a Controller: what the search is doing */
+.padlight-pair-status { font-size: 0.9em; }
+
 /* --- Menu card: colours on a dark menu --- */
 
 .padlight-on-dark .padlight-title { color: #f5f5f5; }

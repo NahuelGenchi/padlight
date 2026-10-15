@@ -2,7 +2,7 @@
 
 ## The project
 
-Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus small Python 3 helpers, standard library only: two read the controller and make it vibrate through evdev, and one lists the programs that have it open. `README.md` describes the features.
+Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move; it can also pair a new controller over Bluetooth. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus small Python 3 helpers, standard library only: two read the controller and make it vibrate through evdev, and one lists the programs that have it open. `README.md` describes the features.
 
 It is an independent project, not affiliated with Microsoft. Xbox is a trademark of Microsoft.
 
@@ -20,6 +20,7 @@ Never describe something as working or complete unless a recorded check establis
 | `src/connectionNotices.js` | Which controllers came and went between two scans, how a controller is told apart across reconnects, and what a connection notice says |
 | `src/notifications.js` | Padlight's source in the message tray; a notification replaces the last one sent with the same key |
 | `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
+| `src/pairing.js` | Pair a Controller: searches, pairs, trusts and connects through BlueZ over D-Bus, and its menu section |
 | `src/controllerCard.js` | The menu card: header, live picture, stick check, button checklist or vibration lab and their tabs, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
@@ -64,6 +65,7 @@ Never describe something as working or complete unless a recorded check establis
   - Padlight's helpers need `python3`, or the live picture stays still and Test Vibration does nothing.
   - GNOME Shell saves screenshots through glycin, which starts `bwrap` from `PATH`. Without it, the Screenshot call still answers true but writes an empty file.
 - To check `install.sh` and what happens at the next log-in, also point `HOME` and `XDG_CACHE_HOME` at the scratch folder and use `GSETTINGS_BACKEND=keyfile` instead, which keeps settings between commands in `$XDG_CONFIG_HOME/glib-2.0/settings/keyfile`. Run `./install.sh` first, then start the hidden shell: it should load Padlight by itself.
+- Pair a Controller talks to BlueZ on the system bus, which a hidden shell shares with the real session. Before using it in a test menu, give the test shell a private system bus (`DBUS_SYSTEM_BUS_ADDRESS`), with a stand-in `org.bluez` on it to test pairing. Otherwise a search runs on the computer's real Bluetooth adapter, and choosing a controller pairs it.
 - A notification banner in the hidden shell stays up until there is input, as GNOME keeps banners for an idle user, and later ones wait behind it. Clear them between checks, for example by destroying the notifications of each source in `Main.messageTray.getSources()`.
 - Check the menu on a dark and a light menu (the `color-scheme` setting), and with at least one other shell theme than the default: the card picks its colors from the menu's own text color.
 - Keep it dependency-free: no build step, no npm packages, no Python packages.
