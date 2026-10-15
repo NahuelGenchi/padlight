@@ -31,5 +31,10 @@ SPDX-License-Identifier: GPL-2.0-or-later
       <summary>Hide the icon without a controller</summary>
       <description>Whether to hide the top-bar icon while no controller is connected. It comes back as soon as one connects.</description>
     </key>
+    <key name="keep-awake" type="b">
+      <default>false</default>
+      <summary>Keep the screen awake</summary>
+      <description>Whether controller input counts as activity, so the screen does not dim and lock while a controller is in use. While it is on and a controller is connected, Padlight reads the controller in the background.</description>
+    </key>
   </schema>
 </schemalist>
