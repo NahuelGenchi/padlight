@@ -19,20 +19,23 @@ Never describe something as working or complete unless a recorded check establis
 | `src/batteryAlerts.js` | When a low battery alert is due and what it says; the extension keeps it while the screen is locked, so unlocking repeats nothing |
 | `src/notifications.js` | Padlight's source in the message tray; a notification replaces the last one sent with the same key |
 | `src/firmware.js` | The newest firmware seen for each Bluetooth LE controller, and how the kernel's version number reads; the sources are in issue #30 |
-| `src/controllerCard.js` | The menu card: header, live picture or stick check and their tabs, information tiles, buttons, and the empty state |
+| `src/controllerCard.js` | The menu card: header, live picture, stick check, button checklist or vibration lab and their tabs, information tiles, buttons, and the empty state |
 | `src/controllerView.js` | The live picture; reads the controller through `inputMonitor.js` only while the menu is open |
 | `src/controllerArt.js` | Draws the controller with cairo: pressed buttons, sticks, triggers and glow |
 | `src/controllerCheck.js` | The stick check: raw stick positions, the triggers, where each stick rests |
+| `src/buttonCheck.js` | The Buttons tab: the picture with the checklist's buttons lit, the count and Reset |
+| `src/checklist.js` | The button checklist's bookkeeping: which buttons a controller has (from its modalias), which have been pressed |
 | `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
 | `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
-| `src/rumble.py` | Plays a short vibration |
+| `src/rumble.py` | Plays a vibration: Test Vibration's short buzz, or the strengths and length from the vibration lab, within its limits |
+| `src/vibrationLab.js` | The Vibration tab: a slider for each motor and the length, and Play |
 | `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
-| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers and alerts, the firmware table, and the Python helpers with fake devices and a made-up `/proc` |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers and alerts, the firmware table, the button checklist, and the Python helpers with fake devices and a made-up `/proc` |
 | `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 
