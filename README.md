@@ -176,8 +176,12 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>One card each, made smaller when there is more than one.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Pair a Controller</strong></td>
+    <td>Finds Xbox controllers that are waiting to pair, then pairs, trusts and connects the one you pick. Hold the pair button on top of the controller until the Xbox button flashes quickly. The search gives up after 30 seconds and stops when the menu closes. With <em>Hide the icon without a controller</em> on, the menu cannot be opened while no controller is connected, so pair the first one from the Bluetooth page of Settings.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Bluetooth Settings</strong></td>
-    <td>Opens the Bluetooth page of Settings, to pair a new controller.</td>
+    <td>Opens the Bluetooth page of Settings, for other devices or when pairing from the menu does not work.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Padlight Settings</strong></td>
@@ -237,7 +241,7 @@ Padlight recognizes a controller by Microsoft's vendor ID, by an Xbox name, or b
 ```mermaid
 flowchart TB
     kernel["<b>Linux</b><br/>/dev/input, sysfs"]
-    upower["<b>UPower</b><br/>battery readings"]
+    services["<b>UPower, BlueZ</b><br/>battery, pairing"]
     subgraph shell["GNOME Shell"]
         ext["<b>extension.js</b><br/>icon and menu"]
         card["<b>controllerCard.js</b><br/>card, live picture"]
@@ -247,17 +251,17 @@ flowchart TB
         rumble["<b>rumble.py</b><br/>vibration"]
     end
     kernel --> shell
-    upower --> shell
+    services --> shell
     ext --> card
     kernel --> monitor
     monitor -->|"while the menu is open"| card
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower, and one that reaches the low level sends a notification. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. With *Keep the screen awake* on, another `monitor.py` per controller says at most every five seconds that the controller is in use, and Padlight holds GNOME's idle inhibitor, as a video player does, until ten seconds pass without input. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower, and one that reaches the low level sends a notification. Pair a Controller asks BlueZ, the system's Bluetooth service, to search and pair over D-Bus. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. With *Keep the screen awake* on, another `monitor.py` per controller says at most every five seconds that the controller is in use, and Padlight holds GNOME's idle inhibitor, as a video player does, until ten seconds pass without input. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
-- **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going and for battery changes, and, while *Keep the screen awake* is on, for whether a controller is in use.
+- **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going, for battery changes and, while *Keep the screen awake* is on, for whether a controller is in use, and finishes a pairing already under way.
 
 | Path | What is in it |
 | :--- | :--- |
@@ -268,6 +272,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/connectionNotices.js` | Which controllers came and went, and what a connection notice says |
 | `src/notifications.js` | Padlight's notifications in the message tray |
 | `src/firmware.js` | The newest firmware known for each controller, for the update hint |
+| `src/pairing.js` | Pair a Controller: the search and pairing through BlueZ, and its part of the menu |
 | `src/controllerCard.js` | The card: header, the picture, the stick check, the button checklist or the vibration lab and their tabs, tiles, buttons, and the empty state |
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
 | `src/controllerCheck.js` | The stick check: the sticks before any dead zone, the triggers, where the sticks rest |
