@@ -13,7 +13,6 @@ const STATE_CHARGING = 1;
 const STATE_FULLY_CHARGED = 4;
 const LEVEL_LABELS = {3: 'Low', 4: 'Critical', 6: 'Normal', 7: 'High', 8: 'Full'};
 const LOW_LEVELS = [3, 4];
-const LOW_PERCENTAGE = 20;
 
 function call(path, iface, method, params, cancellable) {
     return new Promise((resolve, reject) => {
@@ -67,13 +66,15 @@ export function batteryText(battery) {
     return charge;
 }
 
-// Whether it is time to charge or change the batteries
-export function batteryIsLow(battery) {
+// Whether it is time to charge or change the batteries: at lowPercentage, the
+// level from the settings window, or below. A driver that only reports a
+// coarse level says Low or Critical itself.
+export function batteryIsLow(battery, lowPercentage) {
     if (battery.state === STATE_CHARGING || battery.state === STATE_FULLY_CHARGED)
         return false;
     if (battery.level in LEVEL_LABELS)
         return LOW_LEVELS.includes(battery.level);
-    return battery.percentage <= LOW_PERCENTAGE;
+    return battery.percentage <= lowPercentage;
 }
 
 export function batteryIcon(battery) {

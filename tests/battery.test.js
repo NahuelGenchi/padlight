@@ -37,18 +37,21 @@ test('battery text', () => {
     equal(batteryText(reading(0, CHARGING, FULL)), 'Full · Charging', 'coarse level, charging');
 });
 
-test('low at 20% and below, never while charging', () => {
-    equal(batteryIsLow(reading(20)), true, '20%');
-    equal(batteryIsLow(reading(21)), false, '21%');
-    equal(batteryIsLow(reading(5, CHARGING)), false, 'charging');
-    equal(batteryIsLow(reading(5, FULLY_CHARGED)), false, 'charged');
+test('low at the level from the settings and below, never while charging', () => {
+    equal(batteryIsLow(reading(20), 20), true, '20% with the default level');
+    equal(batteryIsLow(reading(21), 20), false, '21% with the default level');
+    equal(batteryIsLow(reading(35), 35), true, '35% with the level at 35');
+    equal(batteryIsLow(reading(36), 35), false, '36% with the level at 35');
+    equal(batteryIsLow(reading(5), 5), true, '5% with the lowest level');
+    equal(batteryIsLow(reading(5, CHARGING), 20), false, 'charging');
+    equal(batteryIsLow(reading(5, FULLY_CHARGED), 20), false, 'charged');
 });
 
-test('a coarse level decides over the percentage', () => {
-    equal(batteryIsLow(reading(90, DISCHARGING, LOW)), true, 'Low');
-    equal(batteryIsLow(reading(90, DISCHARGING, CRITICAL)), true, 'Critical');
-    equal(batteryIsLow(reading(5, DISCHARGING, NORMAL)), false, 'Normal');
-    equal(batteryIsLow(reading(5, DISCHARGING, HIGH)), false, 'High');
+test('a coarse level decides over the percentage and the setting', () => {
+    equal(batteryIsLow(reading(90, DISCHARGING, LOW), 20), true, 'Low');
+    equal(batteryIsLow(reading(90, DISCHARGING, CRITICAL), 20), true, 'Critical');
+    equal(batteryIsLow(reading(5, DISCHARGING, NORMAL), 50), false, 'Normal');
+    equal(batteryIsLow(reading(5, DISCHARGING, HIGH), 50), false, 'High');
 });
 
 test('battery icons in steps of ten', () => {

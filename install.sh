@@ -19,13 +19,14 @@ EXTENSIONS=${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions
 cd "$(dirname "$0")"
 
 pack() {
-    # metadata.json, extension.js and stylesheet.css go in by default.
-    # Python's caches stay out: extensions.gnome.org rejects binary files.
+    # metadata.json, extension.js, prefs.js, stylesheet.css and the settings
+    # schema go in by default. Python's caches stay out: extensions.gnome.org
+    # rejects binary files.
     set --
     for path in src/*; do
         name=${path#src/}
         case $name in
-            metadata.json | extension.js | stylesheet.css) ;;
+            metadata.json | extension.js | prefs.js | stylesheet.css | schemas) ;;
             __pycache__ | *.pyc) ;;
             *) set -- "$@" "--extra-source=$name" ;;
         esac
@@ -57,6 +58,7 @@ install_extension() {
     command -v python3 >/dev/null || echo "Note: Padlight needs python3 for its live picture and vibration test." >&2
 
     pack
+    # This also compiles the settings schema.
     gnome-extensions install --force "$PACKAGE"
     rm -f "$PACKAGE"
 

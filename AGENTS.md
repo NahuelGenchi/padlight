@@ -22,6 +22,8 @@ Never describe something as working or complete unless a recorded check establis
 | `src/monitor.py` | Prints the controller's input state as JSON lines |
 | `src/rumble.py` | Plays a short vibration |
 | `src/stylesheet.css` | The card's look on dark and light menus |
+| `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
+| `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
 | `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, and the Python helpers with fake devices |
@@ -31,7 +33,7 @@ Never describe something as working or complete unless a recorded check establis
 ## Commands
 
 - `./install.sh` installs or updates the extension for the current user and switches it on; `./install.sh --pack` only builds the package; `./install.sh --uninstall` removes it. A running Wayland session loads new extension code only at the next log-in.
-- `tests/run.sh` runs the source checks (`node --check` on the JavaScript, `python3 -m py_compile` on the helpers) and the tests in `tests/`. It needs gjs, Node.js and Python 3 but no GNOME session, and the Checks workflow runs it on every PR. A change to detection, battery matching or the helpers comes with a test. It keeps Python's compiled files out of `src/`; to compile a helper by hand, do the same with `PYTHONPYCACHEPREFIX="$(mktemp -d)" python3 -m py_compile src/monitor.py`.
+- `tests/run.sh` runs the source checks (`node --check` on the JavaScript, `python3 -m py_compile` on the helpers, `glib-compile-schemas --strict` on the settings schema) and the tests in `tests/`. It needs gjs, Node.js, Python 3 and `glib-compile-schemas` but no GNOME session, and the Checks workflow runs it on every PR. A change to detection, battery matching or the helpers comes with a test. It keeps Python's compiled files out of `src/`; to compile a helper by hand, do the same with `PYTHONPYCACHEPREFIX="$(mktemp -d)" python3 -m py_compile src/monitor.py`.
 - In a real session, `journalctl --user -b | grep -i padlight` shows the extension's errors.
 
 ## Working well here
