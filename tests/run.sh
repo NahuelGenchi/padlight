@@ -18,7 +18,8 @@ for file in src/*.js tests/*.js; do
     node --check "$scratch/check.mjs" || { echo "node --check failed: $file"; exit 1; }
 done
 PYTHONPYCACHEPREFIX="$scratch/pycache" python3 -m py_compile src/monitor.py src/rumble.py tests/*.py
-echo 'JavaScript and Python parse.'
+glib-compile-schemas --strict --dry-run src/schemas
+echo 'JavaScript and Python parse, and the settings schema compiles.'
 
 # Every group runs, so one report shows all the failures.
 status=0

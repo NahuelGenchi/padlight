@@ -19,9 +19,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install gjs
+      - name: Install gjs and glib-compile-schemas
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends gjs
+          sudo apt-get install -y -qq --no-install-recommends gjs libglib2.0-bin
       - name: Run the checks
         run: sh tests/run.sh
