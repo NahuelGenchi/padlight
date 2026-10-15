@@ -12,6 +12,7 @@
     <img src="https://img.shields.io/badge/license-GPL--2.0--or--later-2f8f46?style=flat-square" alt="License: GPL-2.0-or-later">
     <img src="https://img.shields.io/badge/helpers-Python%203-2f55b5?style=flat-square&logo=python&logoColor=white" alt="Helpers in Python 3">
     <img src="https://img.shields.io/badge/build%20step-none-2e9e6b?style=flat-square" alt="No build step">
+    <a href="https://github.com/NahuelGenchi/padlight/actions/workflows/checks.yml"><img src="https://img.shields.io/github/actions/workflow/status/NahuelGenchi/padlight/checks.yml?branch=main&style=flat-square&label=checks" alt="Checks on main"></a>
     <img src="https://img.shields.io/badge/status-early%20days-d9902f?style=flat-square" alt="Status: early days">
   </p>
   <p>
@@ -231,6 +232,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |
 | `install.sh` | Install, update, pack or remove |
+| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and the helpers, on made-up data |
 
 ## Roadmap
 
