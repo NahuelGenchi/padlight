@@ -104,8 +104,10 @@ export default class PadlightPreferences extends ExtensionPreferences {
                     title: model,
                     text: nickname,
                     show_apply_button: true,
-                    max_length: NICKNAME_LENGTH,
                 });
+                // On the text field inside the row: the row's own max-length
+                // comes with libadwaita 1.6, and GNOME Shell 46 has 1.5.
+                row.get_delegate().max_length = NICKNAME_LENGTH;
                 row.connect('apply', () => {
                     const renamed = cleanNickname(row.text);
                     if (renamed)

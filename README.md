@@ -8,7 +8,7 @@
     and a picture of the controller that mirrors every button and stick as you play.
   </p>
   <p>
-    <img src="https://img.shields.io/badge/GNOME%20Shell-50-4a86cf?style=flat-square&logo=gnome&logoColor=white" alt="GNOME Shell 50">
+    <img src="https://img.shields.io/badge/GNOME%20Shell-46%E2%80%9350-4a86cf?style=flat-square&logo=gnome&logoColor=white" alt="GNOME Shell 46 to 50">
     <img src="https://img.shields.io/badge/license-GPL--2.0--or--later-2f8f46?style=flat-square" alt="License: GPL-2.0-or-later">
     <img src="https://img.shields.io/badge/helpers-Python%203-2f55b5?style=flat-square&logo=python&logoColor=white" alt="Helpers in Python 3">
     <img src="https://img.shields.io/badge/build%20step-none-2e9e6b?style=flat-square" alt="No build step">
@@ -203,7 +203,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
 
 ## Get started
 
-You need **GNOME Shell 50**; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test, Find Controller, the <em>In use by</em> line and <em>Keep the screen awake</em>.
+You need **GNOME Shell 46 to 50**, as on Ubuntu 24.04 LTS to 26.04 LTS or Debian 13; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test, Find Controller, the <em>In use by</em> line and <em>Keep the screen awake</em>.
 
 ```sh
 git clone https://github.com/NahuelGenchi/padlight.git
@@ -228,7 +228,7 @@ Then log out and back in, because GNOME Shell only loads a new extension when yo
 
 Padlight keeps its settings with your other GNOME settings, under `/org/gnome/shell/extensions/padlight/`. Removing Padlight leaves them in place; `dconf reset -f /org/gnome/shell/extensions/padlight/` clears them.
 
-Developed on Ubuntu 26.04 with GNOME Shell 50.1 on Wayland. Other distributions have not been tried yet.
+Developed on Ubuntu 26.04 with GNOME Shell 50.1 on Wayland. GNOME Shell 46, 47, 48 and 49 were tried in test sessions inside containers of Ubuntu 24.04, Ubuntu 24.10, Debian 13 and Ubuntu 25.10, with a simulated controller. No other distribution has been tried on a real desktop yet.
 
 </details>
 
@@ -292,6 +292,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/vibrationLab.js` | The vibration lab: the two motors' strengths, the length and Play |
 | `src/inuse.py` | The helper that finds which programs have a controller open |
 | `src/stylesheet.css` | The card's look on dark and light menus |
+| `src/shellVersions.js` | What differs between GNOME Shell 46 and 50 |
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |
 | `install.sh` | Install, update, pack or remove |
@@ -306,7 +307,7 @@ Padlight is young. What is on this page works today. Next on the list:
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
 - **Disconnecting a Bluetooth controller left idle**, as consoles do to save its battery ([#24](https://github.com/NahuelGenchi/padlight/issues/24)).
-- **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
+- **Translations**, starting with Spanish ([#32](https://github.com/NahuelGenchi/padlight/issues/32)).
 
 | Milestone | Outcome |
 | :--- | :--- |

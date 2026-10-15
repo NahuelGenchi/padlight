@@ -14,6 +14,7 @@ import {ButtonCheck} from './buttonCheck.js';
 import {ControllerCheck} from './controllerCheck.js';
 import {ControllerView, VIEW_HEIGHT} from './controllerView.js';
 import {canHaveNickname, cleanNickname, controllerName, NICKNAME_LENGTH} from './nicknames.js';
+import {HAS_ACCENT_COLOR, VERTICAL} from './shellVersions.js';
 import {VibrationLab} from './vibrationLab.js';
 
 const GAP = 8;
@@ -38,7 +39,7 @@ function header(logo, title, subtitles, active) {
         y_align: Clutter.ActorAlign.CENTER,
     }));
     const text = new St.BoxLayout({
-        orientation: Clutter.Orientation.VERTICAL,
+        ...VERTICAL,
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
     });
@@ -57,7 +58,7 @@ function tile({caption, value, icon, warning}) {
         y_align: Clutter.ActorAlign.CENTER,
     }));
     const text = new St.BoxLayout({
-        orientation: Clutter.Orientation.VERTICAL,
+        ...VERTICAL,
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
     });
@@ -142,8 +143,8 @@ const Card = GObject.registerClass(
 class Card extends St.BoxLayout {
     _init() {
         super._init({
-            orientation: Clutter.Orientation.VERTICAL,
-            style_class: 'padlight-card',
+            ...VERTICAL,
+            style_class: HAS_ACCENT_COLOR ? 'padlight-card' : 'padlight-card padlight-no-accent',
         });
         this._onDark = null;
     }
@@ -238,7 +239,7 @@ export const ControllerCard = GObject.registerClass({
             }));
         }
         const hero = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: 'padlight-hero',
         });
         for (const pane of this._panes.values())
@@ -445,7 +446,7 @@ class EmptyCard extends Card {
         this.add_child(header(assets.logo, 'Xbox Controller', ['Not connected'], false));
 
         const hero = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: 'padlight-hero padlight-hero-empty',
         });
         hero.add_child(new ControllerView(assets.images));

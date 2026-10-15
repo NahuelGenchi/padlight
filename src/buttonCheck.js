@@ -6,6 +6,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import {ControllerView} from './controllerView.js';
+import {VERTICAL} from './shellVersions.js';
 
 // Room under the picture for the count and the reset
 const ROW_HEIGHT = 30;
@@ -25,7 +26,7 @@ class ButtonCheck extends St.BoxLayout {
      */
     _init(images, {eventNode, monitorScript, checklist, height}) {
         super._init({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: 'padlight-buttons',
             height,
             x_expand: true,

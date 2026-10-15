@@ -7,6 +7,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import {InputMonitor} from './inputMonitor.js';
+import {VERTICAL} from './shellVersions.js';
 
 // The ring around the centre of each stick. Games commonly ignore a zone of
 // about this size; a stick that rests outside it can move a game by itself.
@@ -191,7 +192,7 @@ class ControllerCheck extends St.BoxLayout {
      */
     _init({eventNode, monitorScript, height, compact}) {
         super._init({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...VERTICAL,
             style_class: 'padlight-check',
             height,
             x_expand: true,
@@ -200,7 +201,7 @@ class ControllerCheck extends St.BoxLayout {
         const sticks = new St.BoxLayout({style_class: 'padlight-check-sticks', x_expand: true});
         this._sticks = [['Left stick', 'lx', 'ly'], ['Right stick', 'rx', 'ry']].map(([name, x, y]) => {
             const column = new St.BoxLayout({
-                orientation: Clutter.Orientation.VERTICAL,
+                ...VERTICAL,
                 style_class: 'padlight-check-stick',
                 x_expand: true,
             });

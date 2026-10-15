@@ -52,9 +52,10 @@ edit_list() { # key add|remove
 
 install_extension() {
     shell=$(gnome-shell --version 2>/dev/null | sed -n 's/^GNOME Shell \([0-9]*\).*/\1/p')
-    if [ "$shell" != 50 ]; then
-        echo "Note: Padlight is made for GNOME Shell 50, and this is ${shell:-not GNOME Shell}." >&2
-    fi
+    case $shell in
+        46 | 47 | 48 | 49 | 50) ;;
+        *) echo "Note: Padlight is made for GNOME Shell 46 to 50, and this is ${shell:-not GNOME Shell}." >&2 ;;
+    esac
     command -v python3 >/dev/null || echo "Note: Padlight needs python3 for its live picture and vibration test." >&2
 
     pack
