@@ -22,6 +22,7 @@ import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
 import {KeepAwake} from './keepAwake.js';
+import {controllerName, nicknameKey} from './nicknames.js';
 import {Notifier} from './notifications.js';
 import {Pairing, PairingSection} from './pairing.js';
 import {DEFAULT_VIBRATION} from './vibrationLab.js';
@@ -115,10 +116,15 @@ class PadlightIndicator extends PanelMenu.Button {
         this._inuseScript = GLib.build_filenamev([extension.path, 'inuse.py']);
         this._pairing = new Pairing();
 
-        // A setting changes what the menu or the top bar shows, which alerts
-        // are due, or whether the screen is kept awake.
+        // A setting changes what the menu or the top bar shows, what the
+        // controllers are called, which alerts are due, or whether the screen
+        // is kept awake.
         this._settings = extension.getSettings();
-        this._settingsId = this._settings.connect('changed', () => this._sync());
+        this._settingsId = this._settings.connect('changed', (_settings, key) => {
+            if (key === 'nicknames' || key === 'nickname-salt')
+                this._nameControllers(this._controllers);
+            this._sync();
+        });
         this._batteryAlerts = batteryAlerts;
 
         const icon = name => GLib.build_filenamev([extension.path, 'icons', name]);
@@ -194,12 +200,42 @@ class PadlightIndicator extends PanelMenu.Button {
 
     _scan() {
         const before = this._controllers;
-        this._controllers = scanControllers();
+        this._controllers = this._nameControllers(scanControllers());
         if (this._scanned)
             this._noticeConnections(before);
         this._scanned = true;
         this._sync();
         this._refreshBatteries();
+    }
+
+    // Gives each controller its nickname, or null when it has none.
+    _nameControllers(controllers) {
+        const salt = this._settings.get_string('nickname-salt');
+        const nicknames = this._settings.get_value('nicknames').deepUnpack();
+        for (const controller of controllers) {
+            const key = nicknameKey(controller, salt);
+            controller.nickname = (key && nicknames[key]?.[0]) || null;
+        }
+        return controllers;
+    }
+
+    // Keeps a nickname typed on a controller's card, with the model's name
+    // for the settings window, or drops it when the box was left empty.
+    _setNickname(controller, nickname) {
+        let salt = this._settings.get_string('nickname-salt');
+        if (!salt) {
+            salt = GLib.uuid_string_random();
+            this._settings.set_string('nickname-salt', salt);
+        }
+        const key = nicknameKey(controller, salt);
+        if (!key)
+            return;
+        const nicknames = this._settings.get_value('nicknames').deepUnpack();
+        if (nickname)
+            nicknames[key] = [nickname, controller.name];
+        else
+            delete nicknames[key];
+        this._settings.set_value('nicknames', new GLib.Variant('a{s(ss)}', nicknames));
     }
 
     async _refreshBatteries() {
@@ -356,7 +392,7 @@ class PadlightIndicator extends PanelMenu.Button {
             this._settings.get_boolean('low-battery-alerts'));
         for (const {controller, battery, stage} of due) {
             this._notifier.notify(`battery ${controller.path}`, {
-                ...alertText(controller.name, battery, stage),
+                ...alertText(controllerName(controller), battery, stage),
                 gicon: new Gio.ThemedIcon({name: batteryIcon(battery)}),
                 // Shown even over a full-screen game, where the controller is
                 // in use, and ahead of notifications waiting for the game to
@@ -405,6 +441,7 @@ class PadlightIndicator extends PanelMenu.Button {
                     finding: this._finding.has(controller.path),
                 });
             card.connect('mode-changed', (_card, mode) => this._modes.set(controller.path, mode));
+            card.connect('rename', (_card, nickname) => this._setNickname(controller, nickname));
             card.connect('rumble',
                 () => spawn(['python3', this._rumbleScript, controller.eventNode]));
             card.connect('play', (_card, strong, weak, length) => spawn(['python3', this._rumbleScript,

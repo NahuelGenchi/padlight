@@ -3,9 +3,12 @@
 
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+
+import {cleanNickname, NICKNAME_LENGTH} from './nicknames.js';
 
 export default class PadlightPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -76,5 +79,58 @@ export default class PadlightPreferences extends ExtensionPreferences {
         window._settings.bind('keep-awake', keepAwake, 'active',
             Gio.SettingsBindFlags.DEFAULT);
         screen.add(keepAwake);
+
+        const nicknames = new Adw.PreferencesGroup({
+            title: 'Nicknames',
+            description: 'Give a controller a nickname with the pencil beside its name in the menu. ' +
+                'Rename it here, or forget it.',
+        });
+        page.add(nicknames);
+        this._fillNicknames(window._settings, nicknames);
+    }
+
+    // A row for each nickname, under the model's name: edit it and press
+    // Enter to rename, or Forget. Filled again whenever the nicknames change.
+    _fillNicknames(settings, group) {
+        const rows = [];
+        const save = nicknames => settings.set_value('nicknames', new GLib.Variant('a{s(ss)}', nicknames));
+        const fill = () => {
+            for (const row of rows.splice(0))
+                group.remove(row);
+            const nicknames = settings.get_value('nicknames').deepUnpack();
+            const byName = Object.entries(nicknames).sort(([, [a]], [, [b]]) => a.localeCompare(b));
+            for (const [key, [nickname, model]] of byName) {
+                const row = new Adw.EntryRow({
+                    title: model,
+                    text: nickname,
+                    show_apply_button: true,
+                    max_length: NICKNAME_LENGTH,
+                });
+                row.connect('apply', () => {
+                    const renamed = cleanNickname(row.text);
+                    if (renamed)
+                        nicknames[key] = [renamed, model];
+                    else
+                        delete nicknames[key];
+                    save(nicknames);
+                });
+                const forget = new Gtk.Button({
+                    label: 'Forget',
+                    valign: Gtk.Align.CENTER,
+                    css_classes: ['flat'],
+                });
+                forget.connect('clicked', () => {
+                    delete nicknames[key];
+                    save(nicknames);
+                });
+                row.add_suffix(forget);
+                group.add(row);
+                rows.push(row);
+            }
+        };
+        // Connected before the first read, which GSettings needs to report changes
+        const changedId = settings.connect('changed::nicknames', fill);
+        group.connect('destroy', () => settings.disconnect(changedId));
+        fill();
     }
 }

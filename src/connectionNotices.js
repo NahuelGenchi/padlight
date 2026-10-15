@@ -6,6 +6,7 @@
 // says.
 
 import {batteryText} from './battery.js';
+import {controllerName} from './nicknames.js';
 
 // As the card names each connection
 const CONNECTION_NAMES = {usb: 'Wired (USB)', bluetooth: 'Bluetooth', adapter: 'Xbox adapter'};
@@ -42,17 +43,18 @@ export function noticeKey(controller) {
 /**
  * What a notice says.
  *
- * @param {object} controller
+ * @param {object} controller - with its nickname, if it has one
  * @param {object|null} battery - its reading, when there is one
  * @param {boolean} connected - whether it arrived or left
  * @returns {{title: string, body: string}}
  */
 export function noticeText(controller, battery, connected) {
     const connection = CONNECTION_NAMES[controller.connection];
+    const name = controllerName(controller);
     if (!connected)
-        return {title: `${controller.name} disconnected`, body: connection};
+        return {title: `${name} disconnected`, body: connection};
     return {
-        title: `${controller.name} connected`,
+        title: `${name} connected`,
         body: battery ? `${connection} · ${batteryText(battery)}` : connection,
     };
 }

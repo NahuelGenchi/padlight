@@ -125,7 +125,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Low battery alert</strong></td>
-    <td>A notification when a controller on batteries reaches the low level, and one more at 10%, with the controller's name and the charge left. Each comes once, until the battery charges back above the level, and a controller that connects with a low battery gets one straight away. None for a controller on a cable. The alert shows even over a full-screen game; during Do Not Disturb it waits in the notification list. It can be switched off in Padlight Settings.</td>
+    <td>A notification when a controller on batteries reaches the low level, and one more at 10%, with the controller's nickname or name and the charge left. Each comes once, until the battery charges back above the level, and a controller that connects with a low battery gets one straight away. None for a controller on a cable. The alert shows even over a full-screen game; during Do Not Disturb it waits in the notification list. It can be switched off in Padlight Settings.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Connection</strong></td>
@@ -133,7 +133,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Connection notices</strong></td>
-    <td>A short notification when a controller connects, such as <em>Xbox Wireless Controller connected</em> with <em>Bluetooth · 70%</em> underneath, and one when it leaves, wired, over Bluetooth or through the adapter. Controllers already connected when Padlight starts get none. A controller's newest notice replaces the one before, so a quick reconnect leaves one, and a notice leaves the notification list once it has been seen. It shows even over a full-screen game, and can be switched off in Padlight Settings.</td>
+    <td>A short notification when a controller connects, such as <em>Xbox Wireless Controller connected</em>, or <em>Blue pad connected</em> with a nickname, with <em>Bluetooth · 70%</em> underneath, and one when it leaves, wired, over Bluetooth or through the adapter. Controllers already connected when Padlight starts get none. A controller's newest notice replaces the one before, so a quick reconnect leaves one, and a notice leaves the notification list once it has been seen. It shows even over a full-screen game, and can be switched off in Padlight Settings.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Keep the screen awake</strong></td>
@@ -180,6 +180,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>One card each, made smaller when there is more than one.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Nicknames</strong></td>
+    <td>A name of your own for a controller, such as <em>Blue pad</em>, to tell several apart: press the pencil beside its name on the card, type it and press Enter. The card shows it above the model's name, and the notifications use it. Padlight Settings lists the nicknames, to rename or forget them. A controller is known again by its Bluetooth address, or by its serial number on a cable, but the settings keep only a salted hash of it, never the address or the number. A controller that reports neither cannot keep a nickname, and one used both ways has a nickname for each.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Pair a Controller</strong></td>
     <td>Finds Xbox controllers that are waiting to pair, then pairs, trusts and connects the one you pick. Hold the pair button on top of the controller until the Xbox button flashes quickly. The search gives up after 30 seconds and stops when the menu closes. With <em>Hide the icon without a controller</em> on, the menu cannot be opened while no controller is connected, so pair the first one from the Bluetooth page of Settings.</td>
   </tr>
@@ -189,7 +193,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Padlight Settings</strong></td>
-    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, the switches for the low battery alerts and for connection notices, the top-bar options, and <em>Keep the screen awake</em>.</td>
+    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, the switches for the low battery alerts and for connection notices, the top-bar options, <em>Keep the screen awake</em>, and the nicknames.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Your theme</strong></td>
@@ -262,7 +266,7 @@ flowchart TB
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower, and one that reaches the low level sends a notification. Pair a Controller asks BlueZ, the system's Bluetooth service, to search and pair over D-Bus. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. With *Keep the screen awake* on, another `monitor.py` per controller says at most every five seconds that the controller is in use, and Padlight holds GNOME's idle inhibitor, as a video player does, until ten seconds pass without input. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver, and the Bluetooth address or, on a cable, the serial number, by which it finds the controller's nickname. Battery readings come from UPower, and one that reaches the low level sends a notification. Pair a Controller asks BlueZ, the system's Bluetooth service, to search and pair over D-Bus. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. With *Keep the screen awake* on, another `monitor.py` per controller says at most every five seconds that the controller is in use, and Padlight holds GNOME's idle inhibitor, as a video player does, until ten seconds pass without input. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
 - **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going, for battery changes and, while *Keep the screen awake* is on, for whether a controller is in use, and finishes a pairing already under way.
@@ -274,6 +278,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/battery.js` | Battery readings from UPower |
 | `src/batteryAlerts.js` | When a low battery alert is due, and what it says |
 | `src/connectionNotices.js` | Which controllers came and went, and what a connection notice says |
+| `src/nicknames.js` | Which controllers can keep a nickname, and the salted hash it is kept under |
 | `src/notifications.js` | Padlight's notifications in the message tray |
 | `src/firmware.js` | The newest firmware known for each controller, for the update hint |
 | `src/pairing.js` | Pair a Controller: the search and pairing through BlueZ, and its part of the menu |
@@ -290,7 +295,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |
 | `install.sh` | Install, update, pack or remove |
-| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and alerts, connection notices and the helpers, on made-up data |
+| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and alerts, connection notices, nicknames and the helpers, on made-up data |
 
 ## Roadmap
 
@@ -300,7 +305,7 @@ Padlight is young. What is on this page works today. Next on the list:
 - **The xpadneo driver and the Xbox Wireless Adapter**, tried on real hardware ([#13](https://github.com/NahuelGenchi/padlight/issues/13), [#14](https://github.com/NahuelGenchi/padlight/issues/14)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
-- **Settings and alerts**, such as nicknames and disconnecting an idle controller ([M4](https://github.com/NahuelGenchi/padlight/milestone/5)).
+- **Disconnecting a Bluetooth controller left idle**, as consoles do to save its battery ([#24](https://github.com/NahuelGenchi/padlight/issues/24)).
 - **Translations**, starting with Spanish, and **GNOME 46 to 49** ([#32](https://github.com/NahuelGenchi/padlight/issues/32), [#33](https://github.com/NahuelGenchi/padlight/issues/33)).
 
 | Milestone | Outcome |

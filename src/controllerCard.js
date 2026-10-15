@@ -13,6 +13,7 @@ import {batteryIcon, batteryIsLow, batteryText} from './battery.js';
 import {ButtonCheck} from './buttonCheck.js';
 import {ControllerCheck} from './controllerCheck.js';
 import {ControllerView, VIEW_HEIGHT} from './controllerView.js';
+import {canHaveNickname, cleanNickname, controllerName, NICKNAME_LENGTH} from './nicknames.js';
 import {VibrationLab} from './vibrationLab.js';
 
 const GAP = 8;
@@ -29,7 +30,7 @@ const CONNECTIONS = {
     adapter: {label: 'Xbox adapter', icon: 'network-wireless-symbolic'},
 };
 
-function header(logo, title, subtitle, active) {
+function header(logo, title, subtitles, active) {
     const box = new St.BoxLayout({style_class: 'padlight-header'});
     box.add_child(new St.Icon({
         gicon: logo,
@@ -42,7 +43,8 @@ function header(logo, title, subtitle, active) {
         y_align: Clutter.ActorAlign.CENTER,
     });
     text.add_child(new St.Label({text: title, style_class: 'padlight-title'}));
-    text.add_child(new St.Label({text: subtitle, style_class: 'padlight-subtitle padlight-dim'}));
+    for (const subtitle of subtitles)
+        text.add_child(new St.Label({text: subtitle, style_class: 'padlight-subtitle padlight-dim'}));
     box.add_child(text);
     return box;
 }
@@ -170,13 +172,15 @@ export const ControllerCard = GObject.registerClass({
         // The vibration lab's Play: strong and weak motor in percent, length in ms
         'play': {param_types: [GObject.TYPE_INT, GObject.TYPE_INT, GObject.TYPE_INT]},
         'disconnect': {},
+        // A nickname typed on the card; empty to drop it
+        'rename': {param_types: [GObject.TYPE_STRING]},
         // Find Controller, pressed to start or to stop
         'find': {},
         'mode-changed': {param_types: [GObject.TYPE_STRING]},
     },
 }, class ControllerCard extends Card {
     /**
-     * @param {object} controller - an entry from scanControllers()
+     * @param {object} controller - an entry from scanControllers(), with its nickname
      * @param {object|null} battery - its entry from listBatteries(), if any
      * @param {object} assets - {images, logo, usbIcon, monitorScript}
      * @param {object} options
@@ -195,7 +199,13 @@ export const ControllerCard = GObject.registerClass({
         const since = controller.since
             ? `Connected since ${formatTime(GLib.DateTime.new_from_unix_local(controller.since))}`
             : 'Connected';
-        this.add_child(header(assets.logo, controller.name, since, true));
+        // With a nickname, the model's name goes underneath it.
+        const head = header(assets.logo, controllerName(controller),
+            controller.nickname ? [controller.name, since] : [since], true);
+        this.add_child(head);
+        this._nameEntry = null;
+        if (canHaveNickname(controller))
+            this._addRename(head, controller.nickname ?? '');
 
         const height = compact ? COMPACT_VIEW_HEIGHT : VIEW_HEIGHT;
         this._view = new ControllerView(assets.images, {
@@ -327,6 +337,73 @@ export const ControllerCard = GObject.registerClass({
         this._open = false;
         for (const pane of this._panes.values())
             pane.stop();
+        // Closing the menu drops a nickname that was not kept.
+        this._stopRenaming();
+    }
+
+    // The pencil beside the name, which swaps the name for a box to type a
+    // nickname in. Enter or the tick keeps it; an empty box drops it.
+    _addRename(head, nickname) {
+        const [, text] = head.get_children();
+        [this._title] = text.get_children();
+        this._nickname = nickname;
+        this._nameEntry = new St.Entry({
+            hint_text: 'Nickname',
+            style_class: 'padlight-name-entry',
+            can_focus: true,
+            x_expand: true,
+            visible: false,
+        });
+        this._nameEntry.clutter_text.max_length = NICKNAME_LENGTH;
+        this._nameEntry.clutter_text.connect('activate', () => this._rename());
+        text.insert_child_above(this._nameEntry, this._title);
+
+        this._renameIcon = new St.Icon({
+            icon_name: 'document-edit-symbolic',
+            style_class: 'padlight-rename-icon',
+        });
+        this._renameButton = new St.Button({
+            child: this._renameIcon,
+            style_class: 'padlight-rename',
+            can_focus: true,
+            accessible_name: 'Rename',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        this._renameButton.connect('clicked', () => {
+            if (this._nameEntry.visible)
+                this._rename();
+            else
+                this._startRenaming();
+        });
+        head.add_child(this._renameButton);
+    }
+
+    _startRenaming() {
+        this._title.hide();
+        this._nameEntry.text = this._nickname;
+        this._nameEntry.show();
+        this._nameEntry.grab_key_focus();
+        this._nameEntry.clutter_text.set_selection(0, -1);
+        this._renameIcon.icon_name = 'object-select-symbolic';
+        this._renameButton.accessible_name = 'Keep the nickname';
+    }
+
+    _stopRenaming() {
+        if (!this._nameEntry?.visible)
+            return;
+        this._nameEntry.hide();
+        this._title.show();
+        this._renameIcon.icon_name = 'document-edit-symbolic';
+        this._renameButton.accessible_name = 'Rename';
+    }
+
+    _rename() {
+        const nickname = cleanNickname(this._nameEntry.text);
+        this._stopRenaming();
+        this._renameButton.grab_key_focus();
+        // Last: a new nickname rebuilds the menu, which replaces this card.
+        if (nickname !== this._nickname)
+            this.emit('rename', nickname);
     }
 
     _shown() {
@@ -365,7 +442,7 @@ class EmptyCard extends Card {
     _init(assets) {
         super._init();
 
-        this.add_child(header(assets.logo, 'Xbox Controller', 'Not connected', false));
+        this.add_child(header(assets.logo, 'Xbox Controller', ['Not connected'], false));
 
         const hero = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,

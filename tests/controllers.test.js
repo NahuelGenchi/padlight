@@ -132,6 +132,23 @@ test('firmware versions are binary-coded decimal', () => {
     equal(controllers.map(c => c.firmware), [null, '1.17', '10.5']);
 });
 
+test('the USB serial number of a wired controller, for its nickname', () => {
+    const {controllers} = scan([
+        {...SERIES_USB, serial: 'TEST0SERIAL01'},
+        {...SERIES_USB, js: 1},
+        {...SERIES_BLE, js: 2},
+        {bus: '0003', vendor: '045e', product: '02e6', name: 'Microsoft Xbox Wireless Receiver', driver: 'xone', serial: 'TEST0ADAPTER', js: 3},
+    ]);
+    equal(controllers.map(c => [c.connection, c.serial]), [
+        ['usb', 'TEST0SERIAL01'],
+        // Not the root hub's, which every port on it shares
+        ['usb', null],
+        ['bluetooth', null],
+        // The adapter's own number would be the same for all its controllers.
+        ['adapter', null],
+    ]);
+});
+
 test('power supplies of the parent device are listed for battery matching', () => {
     const {controllers: [pad]} = scan([{...SERIES_BLE, powerSupplies: ['hid-test-battery']}]);
     equal(pad.powerSupplies, ['hid-test-battery']);
