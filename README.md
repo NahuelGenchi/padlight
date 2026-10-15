@@ -128,6 +128,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>The model number on the controller's label, such as 1914 for the Series X|S controller, and the firmware version it reports. The driver and the device file are listed underneath.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>In use by</strong></td>
+    <td>The programs that have the controller open, such as Steam or a game, worked out each time the menu opens. It helps when a game does not see the controller or sees it twice. Only your own programs are listed, and GNOME Shell itself is left out.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Live picture</strong></td>
     <td>Buttons, sticks, triggers and the d-pad, mirrored as you press them while the menu is open.</td>
   </tr>
@@ -163,7 +167,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
 
 ## Get started
 
-You need **GNOME Shell 50**; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the two small helpers behind the live picture and the vibration test.
+You need **GNOME Shell 50**; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test and the <em>In use by</em> line.
 
 ```sh
 git clone https://github.com/NahuelGenchi/padlight.git
@@ -226,7 +230,7 @@ flowchart TB
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture or the stick check; when the menu closes, the helper stops.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver and the Bluetooth address. Battery readings come from UPower. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture or the stick check; when the menu closes, the helper stops. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
 - **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going and for battery changes.
@@ -241,6 +245,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/controllerCheck.js` | The stick check: the sticks before any dead zone, the triggers, where the sticks rest |
 | `src/inputMonitor.js` | Runs `monitor.py` for a card while the menu is open |
 | `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, and a short vibration |
+| `src/inuse.py` | The helper that finds which programs have a controller open |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |

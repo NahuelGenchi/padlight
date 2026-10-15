@@ -25,7 +25,7 @@
 
 .padlight-button { border-radius: 10px; padding: 8px 12px; font-weight: 500; }
 
-.padlight-footnote { font-size: 0.8em; }
+.padlight-footnote { font-size: 0.8em; text-align: center; }
 
 .padlight-tabs { spacing: 4px; }
 .padlight-tab { border-radius: 99px; padding: 3px 12px; font-size: 0.85em; font-weight: 500; }

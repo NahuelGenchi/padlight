@@ -2,7 +2,7 @@
 
 ## The project
 
-Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus two small Python 3 helpers that read the controller and make it vibrate through evdev, standard library only. `README.md` describes the features.
+Padlight is a GNOME Shell extension for Xbox controllers. Its top-bar icon lights up green while a controller is connected, and its menu shows the battery, the connection, the model and firmware, and a picture of the controller that mirrors the buttons and sticks as they move. It is plain JavaScript (ES modules) for GNOME Shell 50 with no build step, plus small Python 3 helpers, standard library only: two read the controller and make it vibrate through evdev, and one lists the programs that have it open. `README.md` describes the features.
 
 It is an independent project, not affiliated with Microsoft. Xbox is a trademark of Microsoft.
 
@@ -23,12 +23,13 @@ Never describe something as working or complete unless a recorded check establis
 | `src/inputMonitor.js` | Runs `monitor.py` between `start()` and `stop()` and hands over each state |
 | `src/monitor.py` | Prints the controller's input state as JSON lines; `--raw` leaves the driver's dead zone in, for the stick check |
 | `src/rumble.py` | Plays a short vibration |
+| `src/inuse.py` | Lists the programs that have a controller's device files open, from `/proc` |
 | `src/stylesheet.css` | The card's look on dark and light menus |
 | `src/prefs.js` | The settings window, opened from the menu and from the Extensions app |
 | `src/schemas/` | The settings schema: each setting's name, default and range |
 | `src/icons/` | Top-bar icon (the Xbox logo, Microsoft's trademark, outside the GPL), USB icon, controller artwork and its glow |
 | `install.sh` | Installs, packs or removes the extension for the current user |
-| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, and the Python helpers with fake devices |
+| `tests/` | `run.sh` and the tests it runs: detection on made-up sysfs trees (`fakesys.js`), the battery helpers, and the Python helpers with fake devices and a made-up `/proc` |
 | `.github/workflows/` | `checks.yml` runs `tests/run.sh` on every PR; `project-tracking.yml` keeps milestones and labels in order |
 | `docs/` | Tracking guide and README images |
 

@@ -56,7 +56,7 @@ function removeTree(path) {
  * Makes a tree with the given input devices. Each device has a bus, vendor,
  * product, name, and optionally version, kind ('usb', 'uhid' for Bluetooth LE,
  * 'virtual' for a made-up pad), driver, uniq, event and js numbers (null for
- * none), keys, ff and powerSupplies.
+ * none), keys, ff, powerSupplies and hidraw numbers.
  *
  * @param {object[]} devices
  * @returns {{sys: string, dev: string, remove: Function}}
@@ -100,6 +100,10 @@ export function makeTree(devices) {
             }
             for (const supply of device.powerSupplies ?? [])
                 mkdir(`${parent}/power_supply/${supply}`);
+            for (const hidraw of device.hidraw ?? []) {
+                mkdir(`${parent}/hidraw/hidraw${hidraw}`);
+                write(`${root}/dev/hidraw${hidraw}`, '');
+            }
         }
         link(`${sys}/class/input/input${number}`, input);
     });
