@@ -10,6 +10,7 @@ import St from 'gi://St';
 import {formatTime} from 'resource:///org/gnome/shell/misc/dateUtils.js';
 
 import {batteryIcon, batteryIsLow, batteryText} from './battery.js';
+import {ButtonCheck} from './buttonCheck.js';
 import {ControllerCheck} from './controllerCheck.js';
 import {ControllerView, VIEW_HEIGHT} from './controllerView.js';
 import {VibrationLab} from './vibrationLab.js';
@@ -20,7 +21,7 @@ const TILES = 4;
 const COMPACT_VIEW_HEIGHT = 186;
 
 // What the card's tabs show in the space for the picture
-const MODES = [['picture', 'Picture'], ['sticks', 'Sticks'], ['vibration', 'Vibration']];
+const MODES = [['picture', 'Picture'], ['sticks', 'Sticks'], ['buttons', 'Buttons'], ['vibration', 'Vibration']];
 
 const CONNECTIONS = {
     usb: {label: 'Wired (USB)', icon: null},
@@ -160,9 +161,9 @@ class Card extends St.BoxLayout {
     }
 });
 
-// One connected controller: live picture, stick check or vibration lab, the
-// facts about it and its actions. Reads the controller only between start()
-// and stop().
+// One connected controller: live picture, stick check, button checklist or
+// vibration lab, the facts about it and its actions. Reads the controller
+// only between start() and stop().
 export const ControllerCard = GObject.registerClass({
     Signals: {
         'rumble': {},
@@ -179,10 +180,12 @@ export const ControllerCard = GObject.registerClass({
      * @param {object} options
      * @param {boolean} options.compact - leave room for more cards
      * @param {number} options.lowBattery - the low battery level, in percent
-     * @param {string} options.mode - what the card shows first: picture, sticks or vibration
+     * @param {string} options.mode - what the card shows first: picture, sticks, buttons or vibration
+     * @param {object} options.checklist - the controller's Checklist, kept by the menu
      * @param {object} options.vibration - the vibration lab's values, kept by the menu
      */
-    _init(controller, battery, assets, {compact, lowBattery, mode = 'picture', vibration = null}) {
+    _init(controller, battery, assets,
+        {compact, lowBattery, mode = 'picture', checklist = null, vibration = null}) {
         super._init();
 
         const since = controller.since
@@ -204,6 +207,14 @@ export const ControllerCard = GObject.registerClass({
         });
         // What each tab shows
         this._panes = new Map([['picture', this._view], ['sticks', this._check]]);
+        if (checklist?.total) {
+            this._panes.set('buttons', new ButtonCheck(assets.images, {
+                eventNode: controller.eventNode,
+                monitorScript: assets.monitorScript,
+                checklist,
+                height,
+            }));
+        }
         if (controller.rumble && vibration) {
             this._panes.set('vibration', new VibrationLab({
                 values: vibration,

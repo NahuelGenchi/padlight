@@ -58,6 +58,12 @@ test('a Bluetooth LE controller stays, although uhid puts it under /devices/virt
     });
 });
 
+test('the button checklist follows what each controller reports', () => {
+    const {controllers: [usb, ble]} = scan([SERIES_USB, SERIES_BLE]);
+    equal([usb.buttons.length, usb.buttons.includes('share')], [17, false], 'USB, no Share key');
+    equal([ble.buttons.length, ble.buttons.includes('share')], [18, true], 'Bluetooth LE, with Share');
+});
+
 test('raw HID nodes, which some programs open instead of the input nodes', () => {
     const {controllers, dev} = scan([SERIES_USB, {...SERIES_BLE, hidraw: [3]}]);
     const root = dev.replace(/\/input$/, '');

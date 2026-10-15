@@ -19,6 +19,8 @@ const TAU = 2 * Math.PI;
 
 const GREEN = [0.2, 0.86, 0.2];
 const PRESSED_ALPHA = 0.82;
+// Buttons the checklist has seen pressed, while they are up again
+const SEEN_ALPHA = 0.36;
 
 // Glow colour and strength on a dark menu and on a light one
 const GLOW_ON_DARK = [...GREEN, 0.55];
@@ -101,7 +103,7 @@ function drawGlow(cr, glow, [r, g, b, alpha]) {
     cr.restore();
 }
 
-function drawStick(cr, image, stick, state, pressed) {
+function drawStick(cr, image, stick, state, alpha) {
     let dx = state[stick.axes[0]] ?? 0;
     let dy = state[stick.axes[1]] ?? 0;
     // A real stick moves in a circle; the raw corners reach past it.
@@ -122,14 +124,14 @@ function drawStick(cr, image, stick, state, pressed) {
     cr.arc(stick.x, stick.y, STICK_CAP_RADIUS, 0, TAU);
     cr.clip();
     paintArt(cr, image);
-    if (pressed) {
-        cr.setSourceRGBA(...GREEN, 0.6);
+    if (alpha) {
+        cr.setSourceRGBA(...GREEN, alpha);
         cr.paint();
     }
     cr.restore();
 }
 
-function drawBumper(cr, image, right) {
+function drawBumper(cr, image, right, alpha) {
     cr.save();
     LEFT_BUMPER.forEach(([x, y], i) => {
         if (i === 0)
@@ -139,16 +141,19 @@ function drawBumper(cr, image, right) {
     });
     cr.closePath();
     cr.clip();
-    paintSilhouette(cr, image, GREEN, PRESSED_ALPHA);
+    paintSilhouette(cr, image, GREEN, alpha);
     cr.restore();
 }
 
-function drawTrigger(cr, value, right, foreground) {
+function drawTrigger(cr, value, right, foreground, seen) {
     const [x, y, w, h, r] = LEFT_TRIGGER;
     const left = right ? mirror(x + w) : x;
 
     roundedBox(cr, left, y, w, h, r);
-    cr.setSourceRGBA(...foreground, 0.18);
+    if (seen)
+        cr.setSourceRGBA(...GREEN, SEEN_ALPHA);
+    else
+        cr.setSourceRGBA(...foreground, 0.18);
     cr.fill();
 
     const pulled = Math.min(Math.max(value ?? 0, 0), 1);
@@ -173,10 +178,17 @@ function drawTrigger(cr, value, right, foreground) {
  * @param {object} images - cairo surfaces: {art, glow}
  * @param {object} state - {buttons: string[], lx, ly, rx, ry, lt, rt}
  * @param {number[]} foreground - text colour of the surrounding UI, as [r, g, b]
+ * @param {Set<string>} [seen] - buttons to keep lit, more faintly, while up
  */
-export function drawController(cr, width, height, images, state, foreground) {
+export function drawController(cr, width, height, images, state, foreground, seen = new Set()) {
     const pressed = new Set(state.buttons ?? []);
     const image = images.art;
+    // How strongly a button is lit: pressed, seen by the checklist, or not
+    const alpha = (name, pressedAlpha = PRESSED_ALPHA) => {
+        if (pressed.has(name))
+            return pressedAlpha;
+        return seen.has(name) ? SEEN_ALPHA : 0;
+    };
 
     const fullWidth = ART_WIDTH + 2 * MARGIN_SIDE;
     const fullHeight = MARGIN_TOP + ART_HEIGHT + MARGIN_BOTTOM;
@@ -192,32 +204,33 @@ export function drawController(cr, width, height, images, state, foreground) {
     const onDark = 0.299 * r + 0.587 * g + 0.114 * b > 0.5;
     drawGlow(cr, images.glow, onDark ? GLOW_ON_DARK : GLOW_ON_LIGHT);
 
-    drawTrigger(cr, state.lt, false, foreground);
-    drawTrigger(cr, state.rt, true, foreground);
+    drawTrigger(cr, state.lt, false, foreground, seen.has('lt'));
+    drawTrigger(cr, state.rt, true, foreground, seen.has('rt'));
 
     paintArt(cr, image);
 
-    if (pressed.has('lb'))
-        drawBumper(cr, image, false);
-    if (pressed.has('rb'))
-        drawBumper(cr, image, true);
+    for (const [name, right] of [['lb', false], ['rb', true]]) {
+        if (alpha(name))
+            drawBumper(cr, image, right, alpha(name));
+    }
 
-    cr.setSourceRGBA(...GREEN, PRESSED_ALPHA);
     for (const [name, [x, y, radius]] of Object.entries(ROUND_BUTTONS)) {
-        if (!pressed.has(name))
+        if (!alpha(name))
             continue;
+        cr.setSourceRGBA(...GREEN, alpha(name));
         cr.arc(x, y, radius, 0, TAU);
         cr.fill();
     }
     for (const [name, box] of Object.entries(BOX_BUTTONS)) {
-        if (!pressed.has(name))
+        if (!alpha(name))
             continue;
+        cr.setSourceRGBA(...GREEN, alpha(name));
         roundedBox(cr, ...box);
         cr.fill();
     }
 
     for (const [name, stick] of Object.entries(STICKS))
-        drawStick(cr, image, stick, state, pressed.has(name));
+        drawStick(cr, image, stick, state, alpha(name, 0.6));
 
     cr.restore();
 }
