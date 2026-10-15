@@ -201,8 +201,7 @@ Padlight recognizes a controller by Microsoft's vendor ID, by an Xbox name, or b
 ```mermaid
 flowchart TB
     kernel["<b>Linux</b><br/>/dev/input, sysfs"]
-    upower["<b>UPower</b><br/>battery readings"]
-    bluez["<b>BlueZ</b><br/>search, pairing"]
+    services["<b>UPower, BlueZ</b><br/>battery, pairing"]
     subgraph shell["GNOME Shell"]
         ext["<b>extension.js</b><br/>icon and menu"]
         card["<b>controllerCard.js</b><br/>card, live picture"]
@@ -212,8 +211,7 @@ flowchart TB
         rumble["<b>rumble.py</b><br/>short vibration"]
     end
     kernel --> shell
-    upower --> shell
-    bluez --> shell
+    services --> shell
     ext --> card
     kernel --> monitor
     monitor -->|"while the menu is open"| card
