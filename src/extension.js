@@ -19,8 +19,10 @@ import {batteryCharge, batteryFor, batteryIcon, batteryIsLow, listBatteries, low
 import {alertText, BatteryAlerts} from './batteryAlerts.js';
 import {Checklist} from './checklist.js';
 import {connectionChanges, noticeKey, noticeText} from './connectionNotices.js';
+import {ControllerActivity} from './controllerActivity.js';
 import {ControllerCard, EmptyCard} from './controllerCard.js';
 import {scanControllers} from './controllers.js';
+import {canIdleDisconnect, IdleDisconnect} from './idleDisconnect.js';
 import {KeepAwake} from './keepAwake.js';
 import {controllerName, nicknameKey} from './nicknames.js';
 import {Notifier} from './notifications.js';
@@ -38,6 +40,12 @@ function spawn(argv) {
     } catch (e) {
         console.error(`padlight: ${e.message}`);
     }
+}
+
+// Disconnects a Bluetooth controller. It stays paired, so it connects again
+// when it is turned on.
+function disconnectBluetooth(controller) {
+    spawn(['bluetoothctl', 'disconnect', controller.address]);
 }
 
 // Runs a program and resolves to what it printed.
@@ -117,8 +125,8 @@ class PadlightIndicator extends PanelMenu.Button {
         this._pairing = new Pairing();
 
         // A setting changes what the menu or the top bar shows, what the
-        // controllers are called, which alerts are due, or whether the screen
-        // is kept awake.
+        // controllers are called, which alerts are due, whether the screen is
+        // kept awake, or when an idle controller is disconnected.
         this._settings = extension.getSettings();
         this._settingsId = this._settings.connect('changed', (_settings, key) => {
             if (key === 'nicknames' || key === 'nickname-salt')
@@ -138,7 +146,11 @@ class PadlightIndicator extends PanelMenu.Button {
             usbIcon: Gio.icon_new_for_string(icon('usb-symbolic.svg')),
             monitorScript: GLib.build_filenamev([extension.path, 'monitor.py']),
         };
-        this._keepAwake = new KeepAwake(this._assets.monitorScript);
+        // Keep the screen awake and idle disconnect, and the background
+        // readers that tell both when a controller is used
+        this._keepAwake = new KeepAwake();
+        this._idleDisconnect = new IdleDisconnect(disconnectBluetooth);
+        this._activity = new ControllerActivity(this._assets.monitorScript, path => this._onInput(path));
 
         this._icon = new St.Icon({gicon: this._assets.logo, style_class: 'system-status-icon'});
         this._level = new St.Label({
@@ -341,6 +353,26 @@ class PadlightIndicator extends PanelMenu.Button {
         }
     }
 
+    // Reads the controllers in the background while Keep the screen awake or
+    // idle disconnect is on: all of them for the first, those on Bluetooth
+    // for the second.
+    _syncActivity() {
+        const keepAwake = this._settings.get_boolean('keep-awake');
+        const idle = this._settings.get_boolean('idle-disconnect')
+            ? this._controllers.filter(canIdleDisconnect) : [];
+        this._activity.update(keepAwake ? this._controllers : idle);
+        if (!keepAwake || !this._controllers.length)
+            this._keepAwake.release();
+        this._idleDisconnect.update(idle, this._settings.get_int('idle-disconnect-minutes'));
+    }
+
+    // A controller was used, as its background reader says.
+    _onInput(path) {
+        if (this._settings.get_boolean('keep-awake'))
+            this._keepAwake.input();
+        this._idleDisconnect.input(path);
+    }
+
     _sync() {
         const connected = this._controllers.length > 0;
         this._icon.opacity = connected ? 255 : DIMMED;
@@ -354,7 +386,7 @@ class PadlightIndicator extends PanelMenu.Button {
             if (!this._controllers.some(c => c.path === path))
                 this._stopFinding(path);
         }
-        this._keepAwake.update(this._controllers, this._settings.get_boolean('keep-awake'));
+        this._syncActivity();
         const lowBattery = this._settings.get_int('low-battery-level');
         this._alertBatteries(lowBattery);
         const shown = JSON.stringify([lowBattery,
@@ -449,7 +481,7 @@ class PadlightIndicator extends PanelMenu.Button {
             card.connect('find', () => this._toggleFind(controller));
             card.connect('disconnect', () => {
                 this.menu.close();
-                spawn(['bluetoothctl', 'disconnect', controller.address]);
+                disconnectBluetooth(controller);
             });
             this._addCard(card);
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
@@ -533,6 +565,8 @@ class PadlightIndicator extends PanelMenu.Button {
         for (const process of this._finding.values())
             process.force_exit();
         this._finding.clear();
+        this._activity.destroy();
+        this._idleDisconnect.destroy();
         this._keepAwake.destroy();
         this._pairing.destroy();
         this._cards = [];

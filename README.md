@@ -50,7 +50,7 @@
   </picture>
 </p>
 
-While the menu is open, the picture follows the controller: buttons light up green, the sticks tilt and the triggers fill as you pull them. Close the menu and Padlight stops reading the controller, unless you turn on *Keep the screen awake*.
+While the menu is open, the picture follows the controller: buttons light up green, the sticks tilt and the triggers fill as you pull them. Close the menu and Padlight stops reading the controller, unless you turn on *Keep the screen awake* or *Disconnect idle controllers*.
 
 ### Every state at a glance
 
@@ -140,6 +140,10 @@ While the menu is open, the picture follows the controller: buttons light up gre
     <td>A switch in Padlight Settings. While it is on, a button press, or a stick or trigger moved at least a quarter of its way, counts as activity, as a key press does, so the screen does not dim, blank or lock while you play with only a controller. A stick drifting by itself does not count. About ten seconds after the last input, the delays from Settings › Power start counting again. It is off at first because it has Padlight read each connected controller in the background; games still get every input.</td>
   </tr>
   <tr>
+    <td width="170" valign="top"><strong>Idle disconnect</strong></td>
+    <td>A switch in Padlight Settings, off at first, and a time of 5, 10, 15 or 30 minutes, 15 at first. While the switch is on, a Bluetooth controller with no input for that time is disconnected, as consoles do to save its battery; it stays paired. Input counts as it does for <em>Keep the screen awake</em>, so a stick drifting by itself does not keep a controller connected. It has Padlight read each Bluetooth controller in the background; wired controllers and those on the Xbox adapter are left alone. GNOME turns Padlight off while the screen is locked, so the time starts again when you unlock.</td>
+  </tr>
+  <tr>
     <td width="170" valign="top"><strong>Model and firmware</strong></td>
     <td>The model number on the controller's label, such as 1914 for the Series X|S controller, and the firmware version it reports. The driver and the device file are listed underneath. When a controller on Bluetooth runs older firmware than the newest Padlight knows of, the firmware icon turns orange and a line points to the Xbox Accessories app on Windows or an Xbox console, since Linux has no updater for it. That list of versions ships with Padlight, so it can fall behind until the next release, and firmware is not compared over USB yet.</td>
   </tr>
@@ -193,7 +197,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Padlight Settings</strong></td>
-    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, the switches for the low battery alerts and for connection notices, the top-bar options, <em>Keep the screen awake</em>, and the nicknames.</td>
+    <td>Opens Padlight's settings window, which the Extensions app also opens. It holds the battery level that counts as low, from 5% to 50%, the switches for the low battery alerts, for connection notices and for disconnecting idle controllers, with its time, the top-bar options, <em>Keep the screen awake</em>, and the nicknames.</td>
   </tr>
   <tr>
     <td width="170" valign="top"><strong>Your theme</strong></td>
@@ -203,7 +207,7 @@ While the menu is open, the picture follows the controller: buttons light up gre
 
 ## Get started
 
-You need **GNOME Shell 46 to 50**, as on Ubuntu 24.04 LTS to 26.04 LTS or Debian 13; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test, Find Controller, the <em>In use by</em> line and <em>Keep the screen awake</em>.
+You need **GNOME Shell 46 to 50**, as on Ubuntu 24.04 LTS to 26.04 LTS or Debian 13; other versions refuse to load Padlight. You also need **Python 3**, which most distributions include: it runs the small helpers behind the live picture, the vibration test, Find Controller, the <em>In use by</em> line, <em>Keep the screen awake</em> and idle disconnect.
 
 ```sh
 git clone https://github.com/NahuelGenchi/padlight.git
@@ -266,10 +270,10 @@ flowchart TB
     card -->|"Test Vibration"| rumble
 ```
 
-Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver, and the Bluetooth address or, on a cable, the serial number, by which it finds the controller's nickname. Battery readings come from UPower, and one that reaches the low level sends a notification. Pair a Controller asks BlueZ, the system's Bluetooth service, to search and pair over D-Bus. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. With *Keep the screen awake* on, another `monitor.py` per controller says at most every five seconds that the controller is in use, and Padlight holds GNOME's idle inhibitor, as a video player does, until ten seconds pass without input. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
+Padlight watches `/dev/input`, so a controller shows up about half a second after it connects, wired or not, and a notification says so; the notification waits up to two more seconds for the battery reading. For each one it reads what the kernel knows: the name, the vendor and product, the firmware version, the driver, and the Bluetooth address or, on a cable, the serial number, by which it finds the controller's nickname. Battery readings come from UPower, and one that reaches the low level sends a notification. Pair a Controller asks BlueZ, the system's Bluetooth service, to search and pair over D-Bus. While the menu is open, `monitor.py` passes the controller's button and stick changes to the card, which redraws the picture, the stick check or the button checklist; when the menu closes, the helper stops. With *Keep the screen awake* on, another `monitor.py` per controller says at most every five seconds that the controller is in use, and Padlight holds GNOME's idle inhibitor, as a video player does, until ten seconds pass without input. *Disconnect idle controllers* uses the same reader on each Bluetooth controller, and disconnects one through `bluetoothctl` once it has gone the chosen time without input. Each time the menu opens, `inuse.py` also looks through your own processes in `/proc` for the ones that have the controller's device files open, without reading from the controller.
 
 - **Games keep every input.** The helpers read the controller without taking it over.
-- **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going, for battery changes and, while *Keep the screen awake* is on, for whether a controller is in use, and finishes a pairing already under way.
+- **Nothing leaves your computer.** No network, no administrator rights, no background service. With the menu closed, Padlight only listens for controllers coming and going, for battery changes and, while *Keep the screen awake* or *Disconnect idle controllers* is on, for whether a controller is in use, and finishes a pairing already under way.
 
 | Path | What is in it |
 | :--- | :--- |
@@ -286,8 +290,10 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/controllerView.js`, `src/controllerArt.js` | The live picture, drawn with cairo |
 | `src/controllerCheck.js` | The stick check: the sticks before any dead zone, the triggers, where the sticks rest |
 | `src/buttonCheck.js`, `src/checklist.js` | The button checklist: the picture with every pressed button lit, and the count |
-| `src/inputMonitor.js` | Runs `monitor.py` for a card while the menu is open |
+| `src/inputMonitor.js` | Runs `monitor.py` for a card while the menu is open, or for a background reader |
+| `src/controllerActivity.js` | The background readers that say when a controller is in use, for *Keep the screen awake* and idle disconnect |
 | `src/keepAwake.js` | Keeps the screen awake while a controller is in use |
+| `src/idleDisconnect.js` | Disconnects a Bluetooth controller left idle |
 | `src/monitor.py`, `src/rumble.py` | The helpers: input changes as they happen, or only whether the controller is in use, and a vibration of a set strength and length, or Find Controller's bursts |
 | `src/vibrationLab.js` | The vibration lab: the two motors' strengths, the length and Play |
 | `src/inuse.py` | The helper that finds which programs have a controller open |
@@ -296,7 +302,7 @@ Padlight watches `/dev/input`, so a controller shows up about half a second afte
 | `src/prefs.js`, `src/schemas/` | The settings window, and the settings it keeps |
 | `src/icons/` | Top-bar icon, USB icon, the controller artwork and its glow |
 | `install.sh` | Install, update, pack or remove |
-| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and alerts, connection notices, nicknames and the helpers, on made-up data |
+| `tests/` | The checks every PR runs, all through `tests/run.sh`: detection, battery readings and alerts, connection notices, nicknames, idle disconnect, the background readers and the helpers, on made-up data |
 
 ## Roadmap
 
@@ -306,7 +312,6 @@ Padlight is young. What is on this page works today. Next on the list:
 - **The xpadneo driver and the Xbox Wireless Adapter**, tried on real hardware ([#13](https://github.com/NahuelGenchi/padlight/issues/13), [#14](https://github.com/NahuelGenchi/padlight/issues/14)).
 - **Pictures of other controllers**, such as the Elite Series 2 and the Xbox One controller ([#4](https://github.com/NahuelGenchi/padlight/issues/4)).
 - **extensions.gnome.org**, to install it with one click ([#6](https://github.com/NahuelGenchi/padlight/issues/6)).
-- **Disconnecting a Bluetooth controller left idle**, as consoles do to save its battery ([#24](https://github.com/NahuelGenchi/padlight/issues/24)).
 - **Translations**, starting with Spanish ([#32](https://github.com/NahuelGenchi/padlight/issues/32)).
 
 | Milestone | Outcome |
