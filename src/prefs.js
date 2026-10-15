@@ -8,6 +8,7 @@ import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+import {IDLE_MINUTES, nearestChoice} from './idleDisconnect.js';
 import {cleanNickname, NICKNAME_LENGTH} from './nicknames.js';
 
 export default class PadlightPreferences extends ExtensionPreferences {
@@ -54,6 +55,24 @@ export default class PadlightPreferences extends ExtensionPreferences {
             Gio.SettingsBindFlags.DEFAULT);
         connections.add(notices);
 
+        const idle = new Adw.SwitchRow({
+            title: 'Disconnect idle controllers',
+            subtitle: 'A Bluetooth controller left without input is disconnected, to save its battery. ' +
+                'While this is on, Padlight reads Bluetooth controllers in the background',
+        });
+        window._settings.bind('idle-disconnect', idle, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
+        connections.add(idle);
+
+        const idleTime = new Adw.ComboRow({
+            title: 'Disconnect after',
+            model: Gtk.StringList.new(IDLE_MINUTES.map(minutes => `${minutes} minutes`)),
+        });
+        window._settings.bind('idle-disconnect', idleTime, 'sensitive',
+            Gio.SettingsBindFlags.GET);
+        this._bindIdleTime(window._settings, idleTime);
+        connections.add(idleTime);
+
         const topBar = new Adw.PreferencesGroup({title: 'Top bar'});
         page.add(topBar);
 
@@ -87,6 +106,25 @@ export default class PadlightPreferences extends ExtensionPreferences {
         });
         page.add(nicknames);
         this._fillNicknames(window._settings, nicknames);
+    }
+
+    // Shows the time before an idle controller is disconnected, or the
+    // nearest one offered when it was set elsewhere, and keeps the one chosen.
+    _bindIdleTime(settings, row) {
+        let showing = false;
+        const show = () => {
+            showing = true;
+            row.selected = nearestChoice(settings.get_int('idle-disconnect-minutes'));
+            showing = false;
+        };
+        row.connect('notify::selected', () => {
+            if (!showing)
+                settings.set_int('idle-disconnect-minutes', IDLE_MINUTES[row.selected]);
+        });
+        // Connected before the first read, which GSettings needs to report changes
+        const changedId = settings.connect('changed::idle-disconnect-minutes', show);
+        row.connect('destroy', () => settings.disconnect(changedId));
+        show();
     }
 
     // A row for each nickname, under the model's name: edit it and press

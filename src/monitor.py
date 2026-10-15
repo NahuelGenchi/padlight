@@ -10,8 +10,9 @@ in and gives finer steps, for the stick check.
 
 monitor.py --activity /dev/input/eventN only says that the controller is in
 use, as {"input":true}, at most every ACTIVITY_EVERY seconds, for keeping the
-screen awake. A button counts, and so does a stick or trigger moved at least
-MOVED of its way; a stick that drifts less than that does not.
+screen awake and for disconnecting an idle controller. A button counts, and so
+does a stick or trigger moved at least MOVED of its way; a stick that drifts
+less than that does not.
 
 Reading does not take the device away from games; every reader gets its own
 copy of the events. Ends when the controller goes away or nobody is listening.

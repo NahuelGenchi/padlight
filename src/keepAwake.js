@@ -4,8 +4,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {InputMonitor} from './inputMonitor.js';
-
 const SESSION_MANAGER = ['org.gnome.SessionManager', '/org/gnome/SessionManager',
     'org.gnome.SessionManager'];
 // org.gnome.SessionManager.Inhibit's flag for keeping the session from going idle
@@ -15,21 +13,14 @@ const INHIBIT_IDLE = 8;
 const HOLD_SECONDS = 10;
 
 // Keeps the screen from dimming and locking while a controller is in use, as
-// a video player does while it plays. A reader per controller says when it is
-// used, and the session's idle inhibitor is held until no controller has been
-// used for a few seconds. GNOME counts idle time again from the moment the
-// inhibitor goes, so the screen then dims, blanks and locks after the delays
-// from Settings › Power, as it would after the last key press.
+// a video player does while it plays. The background readers say when a
+// controller is used, and the session's idle inhibitor is held until no
+// controller has been used for a few seconds. GNOME counts idle time again
+// from the moment the inhibitor goes, so the screen then dims, blanks and
+// locks after the delays from Settings › Power, as it would after the last
+// key press.
 export class KeepAwake {
-    /**
-     * @param {string} monitorScript - monitor.py, whose --activity mode says
-     *   when a controller is in use
-     */
-    constructor(monitorScript) {
-        this._monitorScript = monitorScript;
-        // A reader per controller, by device path, which is new on every
-        // connection: a controller that comes back gets a new reader
-        this._readers = new Map();
+    constructor() {
         this._timerId = 0;
         // Whether the inhibitor should be held, and its cookie once it is
         this._holding = false;
@@ -38,37 +29,14 @@ export class KeepAwake {
     }
 
     /**
-     * Reads the connected controllers while the switch is on, and only then.
-     *
-     * @param {object[]} controllers - from scanControllers()
-     * @param {boolean} enabled - the Keep the screen awake switch
+     * A controller was used: the screen stays awake for a few seconds more.
      */
-    update(controllers, enabled) {
-        const nodes = new Map(enabled ? controllers.map(c => [c.path, c.eventNode]) : []);
-        for (const [path, reader] of this._readers) {
-            if (!nodes.has(path)) {
-                reader.stop();
-                this._readers.delete(path);
-            }
-        }
-        for (const [path, node] of nodes) {
-            if (this._readers.has(path))
-                continue;
-            const reader = new InputMonitor(
-                ['python3', this._monitorScript, '--activity', node], () => this._onInput());
-            reader.start();
-            this._readers.set(path, reader);
-        }
-        if (!nodes.size)
-            this._release();
-    }
-
-    _onInput() {
+    input() {
         this._hold();
         this._stopTimer();
         this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, HOLD_SECONDS, () => {
             this._timerId = 0;
-            this._release();
+            this.release();
             return GLib.SOURCE_REMOVE;
         });
     }
@@ -105,7 +73,11 @@ export class KeepAwake {
             });
     }
 
-    _release() {
+    /**
+     * Lets the screen go idle again now, as when the switch goes off or the
+     * last controller leaves.
+     */
+    release() {
         this._stopTimer();
         if (!this._holding)
             return;
@@ -127,6 +99,6 @@ export class KeepAwake {
     }
 
     destroy() {
-        this.update([], false);
+        this.release();
     }
 }

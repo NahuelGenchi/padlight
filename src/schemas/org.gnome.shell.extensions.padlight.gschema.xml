@@ -21,6 +21,17 @@ SPDX-License-Identifier: GPL-2.0-or-later
       <summary>Connection notices</summary>
       <description>Whether to send a notification when a controller connects or disconnects.</description>
     </key>
+    <key name="idle-disconnect" type="b">
+      <default>false</default>
+      <summary>Disconnect idle controllers</summary>
+      <description>Whether to disconnect a Bluetooth controller that has had no input for the chosen time, to save its battery, as consoles do. While it is on and a Bluetooth controller is connected, Padlight reads the controller in the background.</description>
+    </key>
+    <key name="idle-disconnect-minutes" type="i">
+      <range min="1" max="120"/>
+      <default>15</default>
+      <summary>Minutes before an idle controller is disconnected</summary>
+      <description>How long a Bluetooth controller goes without input before it is disconnected, while idle disconnect is on. The settings window offers 5, 10, 15 and 30 minutes.</description>
+    </key>
     <key name="show-battery-level" type="b">
       <default>false</default>
       <summary>Battery level in the top bar</summary>
