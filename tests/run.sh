@@ -17,7 +17,7 @@ for file in src/*.js tests/*.js; do
     cp "$file" "$scratch/check.mjs"
     node --check "$scratch/check.mjs" || { echo "node --check failed: $file"; exit 1; }
 done
-PYTHONPYCACHEPREFIX="$scratch/pycache" python3 -m py_compile src/monitor.py src/rumble.py tests/*.py
+PYTHONPYCACHEPREFIX="$scratch/pycache" python3 -m py_compile src/*.py tests/*.py
 glib-compile-schemas --strict --dry-run src/schemas
 echo 'JavaScript and Python parse, and the settings schema compiles.'
 

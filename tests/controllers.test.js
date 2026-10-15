@@ -58,6 +58,13 @@ test('a Bluetooth LE controller stays, although uhid puts it under /devices/virt
     });
 });
 
+test('raw HID nodes, which some programs open instead of the input nodes', () => {
+    const {controllers, dev} = scan([SERIES_USB, {...SERIES_BLE, hidraw: [3]}]);
+    const root = dev.replace(/\/input$/, '');
+    equal(controllers.map(c => [c.connection, c.hidrawNodes]),
+        [['usb', []], ['bluetooth', [`${root}/hidraw3`]]]);
+});
+
 test('virtual pads from Steam Input and game streaming are left out', () => {
     equal(scan([
         {bus: '0003', vendor: '28de', product: '11ff', name: 'Microsoft X-Box 360 pad 0', kind: 'virtual'},
