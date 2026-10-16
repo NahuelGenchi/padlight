@@ -566,6 +566,10 @@ class PadlightIndicator extends PanelMenu.Button {
             process.force_exit();
         this._finding.clear();
         this._activity.destroy();
+        // GNOME turns Padlight off while the screen is locked or blank, which
+        // would leave an idle controller connected until someone comes back.
+        if (Main.sessionMode.isLocked)
+            this._idleDisconnect.lock();
         this._idleDisconnect.destroy();
         this._keepAwake.destroy();
         this._pairing.destroy();

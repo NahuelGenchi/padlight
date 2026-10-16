@@ -24,7 +24,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
     <key name="idle-disconnect" type="b">
       <default>false</default>
       <summary>Disconnect idle controllers</summary>
-      <description>Whether to disconnect a Bluetooth controller that has had no input for the chosen time, to save its battery, as consoles do. While it is on and a Bluetooth controller is connected, Padlight reads the controller in the background.</description>
+      <description>Whether to disconnect a Bluetooth controller that has had no input for the chosen time, to save its battery, as consoles do. When the screen locks or goes blank, which turns Padlight off until the screen is back, a controller with no input in the last minute is disconnected at once. While it is on and a Bluetooth controller is connected, Padlight reads the controller in the background.</description>
     </key>
     <key name="idle-disconnect-minutes" type="i">
       <range min="1" max="120"/>

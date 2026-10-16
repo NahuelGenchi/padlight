@@ -6,6 +6,10 @@ import GLib from 'gi://GLib';
 // The times Padlight Settings offers, in minutes
 export const IDLE_MINUTES = [5, 10, 15, 30];
 
+// When the screen locks, a controller with no input for this long, in
+// seconds, is disconnected whatever the chosen time
+export const LOCK_IDLE_SECONDS = 60;
+
 /**
  * Which of the offered times is nearest to a time, for showing one set
  * elsewhere, such as with gsettings.
@@ -102,7 +106,7 @@ const now = () => GLib.get_monotonic_time() / 1e6;
 // Disconnects a Bluetooth controller that has had no input for the chosen
 // time, as consoles turn an unused controller off to save its battery. Input
 // comes from the background readers; a timer waits for the next controller
-// to go idle.
+// to go idle. Locking the screen disconnects those idle for a minute.
 export class IdleDisconnect {
     /**
      * @param {Function} disconnect - called with a controller to disconnect
@@ -143,6 +147,26 @@ export class IdleDisconnect {
         this._watch.input(path, now());
     }
 
+    /**
+     * The screen is locking or going blank, and GNOME turns Padlight off
+     * until it comes back, so nothing would count the time: disconnects the
+     * watched controllers with no input for a while. One used just before,
+     * as in a game GNOME does not count as activity, stays connected.
+     *
+     * @param {number} [seconds] - how long without input counts as idle here
+     */
+    lock(seconds = LOCK_IDLE_SECONDS) {
+        this._disconnectIdle(seconds);
+    }
+
+    _disconnectIdle(seconds) {
+        for (const path of this._watch.due(now(), seconds)) {
+            const controller = this._controllers.get(path);
+            if (controller)
+                this._disconnect(controller);
+        }
+    }
+
     _schedule() {
         this._stopTimer();
         const next = this._watch.next(this._seconds);
@@ -151,11 +175,7 @@ export class IdleDisconnect {
         const delay = Math.max(0, Math.ceil((next - now()) * 1000));
         this._timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
             this._timerId = 0;
-            for (const path of this._watch.due(now(), this._seconds)) {
-                const controller = this._controllers.get(path);
-                if (controller)
-                    this._disconnect(controller);
-            }
+            this._disconnectIdle(this._seconds);
             this._schedule();
             return GLib.SOURCE_REMOVE;
         });
