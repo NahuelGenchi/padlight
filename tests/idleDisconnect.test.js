@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // Idle disconnect: which controllers it looks after, the times offered, when
-// a controller counts as idle, and the timer that disconnects it.
+// a controller counts as idle, the timer that disconnects it, and what a lock
+// disconnects.
 // Run: gjs -m tests/idleDisconnect.test.js
 
 import GLib from 'gi://GLib';
 
-import {canIdleDisconnect, IDLE_MINUTES, IdleDisconnect, IdleWatch, nearestChoice} from '../src/idleDisconnect.js';
+import {
+    canIdleDisconnect, IDLE_MINUTES, IdleDisconnect, IdleWatch, LOCK_IDLE_SECONDS, nearestChoice,
+} from '../src/idleDisconnect.js';
 import {done, equal, test} from './harness.js';
 
 const pad = (path, connection = 'bluetooth', address = '00:00:5e:00:53:01') =>
@@ -142,6 +145,30 @@ test('a new time counts every controller again from then', () => {
     equal(calls.length, 1, 'one disconnect');
     const [[, at]] = calls;
     equal(at >= 800, true, `at ${at} ms of 800`);
+});
+
+test('a lock disconnects the controllers idle for a while, not one used or connected since', () => {
+    equal(LOCK_IDLE_SECONDS, 60, 'a minute, outside the tests');
+    const {idle, calls} = recorder();
+    const watched = [pad('a'), pad('b', 'bluetooth', '00:00:5e:00:53:02')];
+    // A chosen time of 3 s, so only the lock disconnects here
+    idle.update(watched, SHORT * 10);
+    runFor(600, [[500, () => {
+        idle.input('b');
+        idle.update([...watched, pad('c', 'bluetooth', '00:00:5e:00:53:03')], SHORT * 10);
+    }]]);
+    idle.lock(0.3);
+    idle.destroy();
+    equal(calls.map(([path]) => path), ['a'], 'only a, idle for 600 ms of 300');
+});
+
+test('a lock disconnects nothing once the switch is off', () => {
+    const {idle, calls} = recorder();
+    idle.update([pad('a')], SHORT * 10);
+    runFor(600, [[100, () => idle.update([], SHORT * 10)]]);
+    idle.lock(0.3);
+    idle.destroy();
+    equal(calls, []);
 });
 
 test('destroy stops the timer', () => {

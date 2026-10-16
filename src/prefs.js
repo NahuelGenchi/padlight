@@ -57,7 +57,8 @@ export default class PadlightPreferences extends ExtensionPreferences {
 
         const idle = new Adw.SwitchRow({
             title: 'Disconnect idle controllers',
-            subtitle: 'A Bluetooth controller left without input is disconnected, to save its battery. ' +
+            subtitle: 'A Bluetooth controller left without input is disconnected, to save its battery, ' +
+                'and so is one idle for a minute when the screen locks or goes blank. ' +
                 'While this is on, Padlight reads Bluetooth controllers in the background',
         });
         window._settings.bind('idle-disconnect', idle, 'active',
