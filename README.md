@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Padlight is retired.** Its features now live in Lares, a native Linux app by the same author, which checks and manages Xbox controllers itself and can put an icon in the top bar. Lares isn't published yet. This repository stays here, read-only, for reference.
+
 <div align="center">
   <img src="docs/images/logo.svg" width="96" height="96" alt="Padlight logo: a white game controller with a green light in its middle">
   <h1>Padlight</h1>
